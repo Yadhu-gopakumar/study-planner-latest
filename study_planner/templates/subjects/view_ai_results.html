@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block content %}
+<div id="loader"
+    class="hidden fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex flex-col items-center justify-center">
+    <div class="w-16 h-16 border-4 border-[#6C5DD3] border-t-transparent rounded-full animate-spin mb-4"></div>
+    <p class="text-[#6C5DD3] font-bold animate-pulse">generating your exam questions...</p>
+</div>
+
+<div class="bg-sky-50/50 -m-10 p-10 min-h-screen rounded-l-[2.5rem]">
+    <div class="mb-10">
+        <a href="{% url 'subjects:subject_detail' chapter.subject.id %}"
+            class="text-sm font-bold text-[#6C5DD3] hover:underline flex items-center mb-2">
+            ← Back to {{ chapter.subject.name }}
+        </a>
+        <h1 class="text-3xl font-bold text-gray-800">Chapter {{ chapter.chapter_number }}: {{ chapter.title }}</h1>
+    </div>
+
+    <div class="flex items-center gap-4 mb-8 bg-white/50 p-2 rounded-2xl w-max shadow-sm border border-white">
+        <button onclick="switchTab('summary')" id="tab-summary-btn"
+            class="tab-btn px-8 py-3 rounded-xl font-bold text-sm transition-all bg-[#6C5DD3] text-white shadow-md">
+            ✨ AI Summary
+        </button>
+        
+        <a href="{% url 'subjects:generate_exam_questions' chapter.id %}" onclick="showLoader()"
+            class="tab-btn px-8 py-3 rounded-xl font-bold text-sm transition-all bg-white text-gray-600 hover:bg-indigo-50 hover:text-[#6C5DD3] border border-transparent">
+             Practice Questions
+        </a>
+    
+    </div>
+
+    <div id="section-summary" class="animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div class="bg-white p-10 rounded-[2.5rem] shadow-sm border border-purple-50">
+
+            <h3 class="text-xs font-bold text-purple-400 uppercase tracking-widest mb-6">
+                Key Concepts
+            </h3>
+
+            {% if summary_data %}
+            <p class="mb-6">{{ summary_data.summary_paragraph }}</p>
+
+            {% for section in summary_data.points %}
+            {% if section.items %}
+            <h4 class="text-sm font-semibold text-purple-600 uppercase mb-2">
+                {{ section.title }}
+            </h4>
+            <ul class="list-disc list-inside mb-6">
+                {% for point in section.items %}
+                <li>{{ point }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+            {% endfor %}
+
+
+            {% else %}
+            <p class="text-red-400 italic">
+                No summary found. Please generate one first.
+            </p>
+            {% endif %}
+
+        </div>
+    </div>
+
+
+</div>
+
+<script>
+    function showLoader() {
+        document.getElementById('loader').classList.remove('hidden');
+    }
+
+
+</script>
+{% endblock %}

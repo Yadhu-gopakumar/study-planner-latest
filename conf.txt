@@ -1,0 +1,61 @@
+ollama_configuration:
+  name: "Ollama Configuration Guide (TinyLlama)"
+
+  description: >
+    This project uses Ollama (Local LLM Runtime) with the TinyLlama model
+    for AI-based PDF summarization and question generation.
+    A local model ensures privacy, zero API cost, and avoids regional rate limits.
+
+  system_requirements:
+    operating_system:
+      - "Linux (Mint / Ubuntu)"
+      - "Windows 10/11"
+    ram: "Minimum 4 GB"
+    python: "Version 3.10 or above"
+    internet: "Required only for first model download"
+
+  installation:
+    linux:
+      command: "curl -fsSL https://ollama.com/install.sh | sh"
+    windows:
+      steps:
+        - "Download installer from https://ollama.com/download"
+        - "Run the .exe file and complete installation"
+
+  verification:
+    command: "ollama --version"
+    expected_output: "ollama version x.x.x"
+
+  service:
+    auto_start: true
+    manual_start_command: "ollama serve"
+    api_endpoint: "http://127.0.0.1:11434"
+
+  model:
+    name: "tinyllama"
+    download_command: "ollama pull tinyllama"
+
+    storage_location:
+      linux: "~/.ollama/models"
+      windows: "C:\\Users\\<username>\\.ollama\\models"
+
+
+  testing:
+    command: 'ollama run tinyllama "Hello, are you ready to summarize my PDFs?"'
+    success_condition: "Model generates a valid response"
+
+  application_settings:
+    ollama_model: "tinyllama"
+
+
+  performance_notes:
+    recommendations:
+      - "Limit input text to 1500–2000 characters"
+      - "Limit output tokens to reduce CPU usage"
+      - "Generate AI content once and cache results"
+      - "Avoid repeated AI calls during runtime"
+
+run in new tab: OLLAMA_NUM_THREADS=2 ollama run qwen2:0.5b --num_ctx 1024
+to verify: curl http://localhost:11434
+
+

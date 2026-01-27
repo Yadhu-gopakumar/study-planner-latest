@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="bg-sky-50/50 -m-10 p-10 min-h-screen rounded-l-[2.5rem]">
+    <div class="mb-10">
+        <a href="{% url 'subjects:subject_detail' chapter.subject.id %}"
+            class="text-sm font-bold text-[#6C5DD3] hover:underline flex items-center mb-2">
+            ← Back to {{ chapter.subject.name }}
+        </a>
+        <h1 class="text-3xl font-bold text-gray-800">Chapter {{ chapter.chapter_number }}: {{ chapter.title }}</h1>
+        <p class="text-gray-400 text-sm">AI-Generated Study Insights</p>
+    </div>
+
+    <div class="flex gap-4 mb-8 bg-white/50 p-2 rounded-2xl w-max shadow-sm">
+        <button onclick="switchTab('summary')" id="tab-summary-btn"
+            class="px-8 py-3 rounded-xl font-bold text-sm transition-all bg-[#6C5DD3] text-white">
+            ✨ AI Summary
+        </button>
+        <a href="{% url 'subjects:generate_exam_questions' chapter.id %}"
+            class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold">
+            🎯 Generate Exam Questions
+        </a>
+
+
+    </div>
+
+    <div id="section-summary" class="animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div class="bg-white p-10 rounded-[2.5rem] shadow-sm border border-purple-50">
+            <h3 class="text-xs font-bold text-purple-400 uppercase tracking-widest mb-6">Key Concepts & Summary</h3>
+            <div class="prose prose-indigo max-w-none text-gray-700">
+                {% if chapter.summary %}
+                {{ chapter.summary|linebreaks }}
+                {% else %}
+                <p class="text-red-400 italic">No summary found in database. Try re-generating.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div id="section-practice" class="hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div class="space-y-6">
+            {% for q in chapter.questions.all %}
+            <div
+                class="bg-white p-8 rounded-[2rem] shadow-sm border border-transparent hover:border-indigo-100 transition-all">
+                <div class="flex items-start gap-4">
+                    <span
+                        class="w-8 h-8 bg-indigo-50 text-[#6C5DD3] rounded-lg flex items-center justify-center font-bold text-sm">
+                        {{ forloop.counter }}
+                    </span>
+                    <div class="flex-grow">
+                        <p class="text-lg font-semibold text-gray-800 mb-6">{{ q.text }}</p>
+
+                        <details class="group">
+                            <summary
+                                class="list-none cursor-pointer inline-flex items-center text-xs font-bold text-[#6C5DD3] uppercase tracking-widest bg-indigo-50 px-4 py-2 rounded-full hover:bg-[#6C5DD3] hover:text-white transition-all">
+                                Check Answer
+                            </summary>
+                            <div
+                                class="mt-4 p-5 bg-green-50 rounded-2xl border border-green-100 text-green-800 text-sm leading-relaxed">
+                                <strong>Correct Answer:</strong> {{ q.correct_answer }}
+                            </div>
+                        </details>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+    function switchTab(type) {
+        const sumBtn = document.getElementById('tab-summary-btn');
+        const pracBtn = document.getElementById('tab-practice-btn');
+        const sumSec = document.getElementById('section-summary');
+        const pracSec = document.getElementById('section-practice');
+
+        if (type === 'summary') {
+            sumBtn.classList.add('bg-[#6C5DD3]', 'text-white');
+            sumBtn.classList.remove('text-gray-400');
+            pracBtn.classList.remove('bg-[#6C5DD3]', 'text-white');
+            pracBtn.classList.add('text-gray-400');
+            sumSec.classList.remove('hidden');
+            pracSec.classList.add('hidden');
+        } else {
+            pracBtn.classList.add('bg-[#6C5DD3]', 'text-white');
+            pracBtn.classList.remove('text-gray-400');
+            sumBtn.classList.remove('bg-[#6C5DD3]', 'text-white');
+            sumBtn.classList.add('text-gray-400');
+            pracSec.classList.remove('hidden');
+            sumSec.classList.add('hidden');
+        }
+    }
+</script>
+{% endblock %}

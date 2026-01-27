@@ -1,0 +1,149 @@
+<!-- TEST RESULTS PAGE -->
+<!-- templates/practice/results.html -->
+{% extends 'base.html' %}
+{% block title %}Test Results{% endblock %}
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <!-- Score Card -->
+    <div class="bg-gradient-to-r from-purple-600 to-purple-800 rounded-xl p-8 text-white mb-6 shadow-lg">
+        <div class="text-center">
+            <h1 class="text-3xl font-bold mb-2">Test Completed! 🎉</h1>
+            <p class="text-purple-200 mb-6">{{ test.subject.name }} - {{ test.title }}</p>
+            
+            <div class="flex justify-center items-center space-x-12 mb-6">
+                <div>
+                    <div class="text-6xl font-bold">{{ score }}%</div>
+                    <p class="text-purple-200 mt-2">Overall Score</p>
+                </div>
+                <div class="w-32 h-32 relative">
+                    <svg class="transform -rotate-90 w-32 h-32">
+                        <circle cx="64" cy="64" r="56" stroke="rgba(255,255,255,0.2)" stroke-width="8" fill="none"/>
+                        <circle cx="64" cy="64" r="56" stroke="white" stroke-width="8" fill="none"
+                            stroke-dasharray="352" stroke-dashoffset="{{ 352 - (352 * score / 100) }}"
+                            class="transition-all duration-1000"/>
+                    </svg>
+                    <div class="absolute inset-0 flex items-center justify-center text-2xl font-bold">
+                        {{ correct_answers }}/{{ total_questions }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-6">
+                <div class="bg-white bg-opacity-20 rounded-lg p-4">
+                    <p class="text-3xl font-bold">{{ time_taken }}</p>
+                    <p class="text-sm text-purple-200">Time Taken</p>
+                </div>
+                <div class="bg-white bg-opacity-20 rounded-lg p-4">
+                    <p class="text-3xl font-bold">{{ correct_answers }}</p>
+                    <p class="text-sm text-purple-200">Correct</p>
+                </div>
+                <div class="bg-white bg-opacity-20 rounded-lg p-4">
+                    <p class="text-3xl font-bold">{{ avg_score }}/10</p>
+                    <p class="text-sm text-purple-200">Avg Score</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Analysis -->
+    <div class="bg-white rounded-xl p-6 shadow-sm border mb-6">
+        <h2 class="text-xl font-bold text-gray-900 mb-4">📊 Performance Analysis</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="p-4 rounded-lg border-l-4 border-green-500 bg-green-50">
+                <p class="text-sm text-gray-600 mb-1">Strengths</p>
+                <ul class="text-sm text-gray-900 space-y-1">
+                    {% for strength in strengths %}
+                    <li>✓ {{ strength }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            
+            <div class="p-4 rounded-lg border-l-4 border-yellow-500 bg-yellow-50">
+                <p class="text-sm text-gray-600 mb-1">Areas to Improve</p>
+                <ul class="text-sm text-gray-900 space-y-1">
+                    {% for area in improvement_areas %}
+                    <li>• {{ area }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            
+            <div class="p-4 rounded-lg border-l-4 border-blue-500 bg-blue-50">
+                <p class="text-sm text-gray-600 mb-1">Recommendations</p>
+                <ul class="text-sm text-gray-900 space-y-1">
+                    {% for rec in recommendations %}
+                    <li>💡 {{ rec }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        {% if schedule_updated %}
+        <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+            <div class="flex items-center">
+                <span class="text-2xl mr-3">📅</span>
+                <div>
+                    <p class="font-semibold text-purple-900">Schedule Updated!</p>
+                    <p class="text-sm text-purple-700">Your study schedule has been adjusted based on your performance.</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Detailed Answers -->
+    <div class="bg-white rounded-xl p-6 shadow-sm border mb-6">
+        <h2 class="text-xl font-bold text-gray-900 mb-4">📝 Detailed Review</h2>
+        
+        {% for answer in answers %}
+        <div class="mb-6 p-6 rounded-lg border {% if answer.ai_score >= 7 %}border-green-200 bg-green-50{% elif answer.ai_score >= 5 %}border-yellow-200 bg-yellow-50{% else %}border-red-200 bg-red-50{% endif %}">
+            <div class="flex justify-between items-start mb-4">
+                <h3 class="font-semibold text-gray-900">Question {{ forloop.counter }}</h3>
+                <span class="px-3 py-1 rounded-full text-sm font-bold
+                    {% if answer.ai_score >= 7 %}bg-green-200 text-green-800
+                    {% elif answer.ai_score >= 5 %}bg-yellow-200 text-yellow-800
+                    {% else %}bg-red-200 text-red-800{% endif %}">
+                    {{ answer.ai_score }}/10
+                </span>
+            </div>
+            
+            <p class="text-gray-900 mb-4">{{ answer.question.question_text }}</p>
+            
+            <div class="mb-4">
+                <p class="text-sm font-medium text-gray-700 mb-2">Your Answer:</p>
+                <p class="text-gray-800 bg-white p-4 rounded-lg border">{{ answer.user_answer }}</p>
+            </div>
+            
+            <div class="mb-4">
+                <p class="text-sm font-medium text-gray-700 mb-2">AI Feedback:</p>
+                <p class="text-gray-800">{{ answer.ai_feedback }}</p>
+            </div>
+            
+            {% if answer.missing_points %}
+            <div class="mt-4">
+                <p class="text-sm font-medium text-gray-700 mb-2">Missing Points:</p>
+                <ul class="list-disc list-inside text-sm text-gray-700">
+                    {% for point in answer.missing_points %}
+                    <li>{{ point }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Actions -->
+    <div class="flex space-x-4">
+        <a href="{% url 'start_practice' %}" class="flex-1 bg-purple-600 text-white py-4 rounded-lg hover:bg-purple-700 font-medium text-center">
+            Take Another Test
+        </a>
+        <a href="{% url 'schedule_view' %}" class="flex-1 bg-blue-600 text-white py-4 rounded-lg hover:bg-blue-700 font-medium text-center">
+            View Updated Schedule
+        </a>
+        <a href="{% url 'dashboard' %}" class="flex-1 bg-gray-200 text-gray-700 py-4 rounded-lg hover:bg-gray-300 font-medium text-center">
+            Back to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

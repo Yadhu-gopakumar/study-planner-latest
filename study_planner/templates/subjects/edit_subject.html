@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Edit {{ subject.name }} - ēCoursie{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto py-10">
+    <div class="mb-10">
+        <h1 class="text-4xl font-extrabold text-indigo-900 tracking-tight">Edit Subject</h1>
+        <p class="text-gray-500 mt-2">Update the details for {{ subject.name }}.</p>
+    </div>
+
+    <div class="bg-white/70 backdrop-blur-xl border border-white/40 rounded-[2.5rem] p-10 shadow-2xl shadow-indigo-100">
+        <form method="POST" class="space-y-8">
+            {% csrf_token %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Subject Name</label>
+                    <input type="text" name="name" value="{{ subject.name }}" required class="w-full bg-white/80 border-2 border-indigo-50 px-6 py-4 rounded-2xl text-gray-700 outline-none focus:border-[#6C5DD3]">
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Subject Code</label>
+                    <input type="text" name="code" value="{{ subject.code }}" required class="w-full bg-white/80 border-2 border-indigo-50 px-6 py-4 rounded-2xl text-gray-700 outline-none focus:border-[#6C5DD3]">
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Difficulty</label>
+                    <select name="difficulty" class="w-full bg-white/80 border-2 border-indigo-50 px-6 py-4 rounded-2xl text-gray-700 outline-none focus:border-[#6C5DD3]">
+                        <option value="1" {% if subject.difficulty == 1 %}selected{% endif %}>Easy</option>
+                        <option value="2" {% if subject.difficulty == 2 %}selected{% endif %}>Medium</option>
+                        <option value="3" {% if subject.difficulty == 3 %}selected{% endif %}>Hard</option>
+                    </select>
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Total Chapters</label>
+                    <input type="number" name="completed_chapters" value="{{ subject.total_chapters }}" class="w-full bg-white/80 border-2 border-indigo-50 px-6 py-4 rounded-2xl text-gray-700 outline-none focus:border-[#6C5DD3]">
+                </div>
+            </div>
+
+            <div class="pt-6 border-t border-indigo-50 flex items-center justify-between">
+                <a href="{% url 'subjects:subjects_list' %}" class="text-gray-400 font-semibold hover:text-gray-600">Cancel</a>
+                <button type="submit" class="bg-[#6C5DD3] text-white px-10 py-4 rounded-[1.5rem] font-bold shadow-xl shadow-indigo-100 hover:bg-[#5b4eb3] transition-all transform hover:-translate-y-1">
+                    Update Subject
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

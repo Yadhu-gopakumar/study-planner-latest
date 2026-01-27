@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div id="exam-container" class="hidden bg-slate-50 min-h-screen p-4 md:p-10 relative">
+    <div class="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md border-b z-50 px-10 py-4 flex justify-between items-center">
+        <div>
+            <h2 class="text-xl font-bold text-indigo-900">{{ chapter.title }}</h2>
+        </div>
+        <div class="bg-red-500 text-white px-6 py-2 rounded-2xl font-black shadow-lg flex items-center gap-2">
+            ⏱️ <span id="timer-display">05:00</span>
+        </div>
+    </div>
+
+    <div class="max-w-3xl mx-auto mt-24 pb-20">
+        <form id="quiz-form">
+            {% for q in questions %}
+            <div class="question-block bg-white p-8 rounded-[2.5rem] shadow-sm mb-8" data-correct="{{ q.correct_answer }}">
+                <div class="flex gap-4 mb-6">
+                    <span class="w-8 h-8 bg-indigo-50 text-[#6C5DD3] rounded-lg flex items-center justify-center font-bold">
+                        {{ forloop.counter }}
+                    </span>
+                    <p class="text-lg font-semibold text-gray-800">{{ q.text }}</p>
+                </div>
+
+                <div class="grid gap-3 ml-12">
+                    {% for option in q.options_list %}
+                    <label class="flex items-center p-4 rounded-2xl border cursor-pointer hover:bg-indigo-50 transition group">
+                        <input type="radio" name="q{{ q.id }}" value="{{ option }}" class="mr-4 accent-[#6C5DD3]">
+                        <span class="text-gray-600 group-hover:text-indigo-900">{{ option }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+
+            <div class="flex justify-center mt-10">
+                <button type="button" onclick="submitResults()" class="bg-[#6C5DD3] text-white px-12 py-5 rounded-[2rem] font-black hover:scale-105 transition-transform">
+                    Submit Exam
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="start-overlay" class="fixed inset-0 bg-[#0E0E2C] flex flex-col items-center justify-center text-white z-[100]">
+    <h1 class="text-4xl font-black mb-6">Ready for Practice?</h1>
+    <button onclick="startExam()" class="bg-white text-black px-12 py-5 rounded-2xl font-black shadow-2xl hover:bg-indigo-50 transition-colors">
+        START PRACTICE EXAM
+    </button>
+</div>
+
+<script>
+let timeLeft = 300;
+let timerId = null;
+
+function startExam() {
+    // Hide all UI elements that allow navigation
+    const toHide = ['aside', 'nav', '.sidebar', '.navbar'];
+    toHide.forEach(s => {
+        const el = document.querySelector(s);
+        if(el) el.style.setProperty('display', 'none', 'important');
+    });
+
+    const main = document.querySelector('main');
+    if(main) { main.style.margin = '0'; main.style.width = '100%'; }
+
+    if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+    
+    document.getElementById('start-overlay').classList.add('hidden');
+    document.getElementById('exam-container').classList.remove('hidden');
+    
+    timerId = setInterval(() => {
+        timeLeft--;
+        const min = String(Math.floor(timeLeft / 60)).padStart(2, '0');
+        const sec = String(timeLeft % 60).padStart(2, '0');
+        document.getElementById('timer-display').innerText = `${min}:${sec}`;
+        if (timeLeft <= 0) { clearInterval(timerId); submitResults(); }
+    }, 1000);
+}
+
+function submitResults() {
+    let score = 0;
+    document.querySelectorAll('.question-block').forEach(block => {
+        const selected = block.querySelector('input[type="radio"]:checked');
+        const correct = block.dataset.correct.trim().toUpperCase();
+        if (selected) {
+            // Check if the first character of the option (e.g., 'A') matches the correct answer
+            if (selected.value.trim().toUpperCase().startsWith(correct)) {
+                score++;
+            }
+        }
+    });
+
+    fetch(`/exams/save-score/{{ chapter.id }}/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ score })
+    }).then(() => {
+        if (document.fullscreenElement) document.exitFullscreen();
+        window.location.href = `/exams/results/{{ chapter.id }}/`;
+    });
+}
+</script>
+{% endblock %}

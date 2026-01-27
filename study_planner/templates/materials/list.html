@@ -1,0 +1,236 @@
+<!-- MATERIALS LIST PAGE -->
+<!-- templates/materials/list.html -->
+{% extends 'base.html' %}
+{% block title %}Study Materials{% endblock %}
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">📚 Study Materials</h1>
+            <p class="text-gray-600 mt-1">Manage your notes and study resources</p>
+        </div>
+        <button onclick="openUploadModal()"
+            class="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 font-medium">
+            📤 Upload Material
+        </button>
+
+        <div id="uploadModal"
+            class="hidden fixed inset-0 z-[100] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bg-white w-full max-w-md rounded-[2rem] p-8 shadow-2xl animate-in fade-in zoom-in duration-300">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-gray-900">Upload handwritten note</h3>
+                    <button onclick="closeUploadModal()" class="text-gray-400 hover:text-gray-600">✕</button>
+                </div>
+
+                <form id="uploadForm" method="POST" enctype="multipart/form-data"
+                    action="{% url 'materials:upload_handwritten' %}">
+                    {% csrf_token %}
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-xs font-bold text-gray-400 uppercase">Select Subject</label>
+                            <select name="subject_id" required
+                                class="w-full mt-1 p-3 bg-slate-50 border rounded-xl outline-none focus:ring-2 focus:ring-purple-500">
+                                {% for subject in subjects %}
+                                <option value="{{ subject.id }}">{{ subject.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-bold text-gray-400 uppercase">Material Title</label>
+                            <input type="text" name="title" required placeholder="e.g. Calculus Week 1"
+                                class="w-full mt-1 p-3 bg-slate-50 border rounded-xl outline-none focus:ring-2 focus:ring-purple-500">
+                        </div>
+
+                        <div
+                            class="border-2 border-dashed border-purple-100 rounded-2xl p-6 text-center hover:bg-purple-50 transition-colors relative">
+                            <input type="file" name="note_file" required
+                                class="absolute inset-0 opacity-0 cursor-pointer">
+                            <span class="text-3xl block mb-2">✍️</span>
+                            <p class="text-sm text-purple-600 font-medium">Click to upload handwritten image/PDF</p>
+                        </div>
+
+                        <button type="submit" onclick="showLoader()"
+                            class="w-full bg-purple-600 text-white py-4 rounded-xl font-bold shadow-lg hover:bg-purple-700 transition-all">
+                            Generate Summary ✨
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="loadingOverlay"
+            class="hidden fixed inset-0 z-[110] bg-white/90 flex flex-col items-center justify-center">
+            <div class="w-16 h-16 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mb-4"></div>
+            <p class="text-purple-900 font-bold">AI is reading your handwriting...</p>
+        </div>
+    </div>
+
+    <!-- Filter by Subject -->
+    <div class="bg-white rounded-xl p-4 shadow-sm border">
+        <div class="flex items-center space-x-4">
+            <label class="text-sm font-medium text-gray-700">Filter by Subject:</label>
+            <select id="subjectFilter" onchange="filterMaterials()"
+                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                <option value="all">All Subjects</option>
+                {% for subject in subjects %}
+                <option value="{{ subject.id }}">{{ subject.name }}</option>
+                {% endfor %}
+            </select>
+            <input type="text" id="searchMaterial" placeholder="Search materials..." onkeyup="searchMaterials()"
+                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+        </div>
+    </div>
+    <!-- Statistics -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+        <div class="bg-white rounded-xl p-2 shadow-sm border">
+            <p class="text-sm text-gray-600 ml-5">Total Materials</p>
+            <p class="text-3xl font-bold text-gray-900 ml-5">{{ total_materials }}</p>
+        </div>
+        <div class="bg-white rounded-xl p-2 shadow-sm border">
+            <p class="text-sm text-gray-600 mb-1 ml-5">Total Questions</p>
+            <p class="text-3xl font-bold text-purple-600 ml-5">{{ total_questions }}</p>
+        </div>
+        <div class="bg-white rounded-xl p-2 shadow-sm border">
+            <p class="text-sm text-gray-600 mb-1 ml-5">PDF Notes</p>
+            <p class="text-3xl font-bold text-red-600 ml-5">{{ pdf_count }}</p>
+        </div>
+
+    </div>
+    <!-- Materials Grid -->
+    {% if materials %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for material in materials %}
+        <div class="bg-white rounded-xl shadow-sm border overflow-hidden card-hover material-item"
+            data-subject="{{ material.subject.id }}" data-title="{{ material.title|lower }}">
+
+            <!-- Material Header -->
+            <div class="p-6 border-b bg-gradient-to-r from-red-50 to-red-100">
+                <div class="flex items-start justify-between mb-3">
+                    <span class="text-4xl">📄</span> <span class="px-2 py-1 rounded text-xs font-medium bg-white">
+                        {{ material.questions.count }} questions
+                    </span>
+                </div>
+                <h3 class="font-bold text-gray-900 text-lg mb-1">{{ material.title }}</h3>
+                <p class="text-sm text-gray-600">{{ material.subject.name }}</p>
+            </div>
+
+            <div class="p-6">
+                <div class="space-y-3 mb-4">
+                    <div class="flex space-x-2">
+                        <a href="{% url 'subjects:process_ai_view' material.id %}"
+                            class="flex-grow bg-purple-600 text-white text-center py-2 rounded-lg hover:bg-purple-700 text-sm font-medium">
+                            View AI Summary
+                        </a>
+                        <a href="{{ material.note_file.url }}" target="_blank"
+                            class="flex-1 px-3 py-2 px-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100">
+                            View
+                        </a>
+                        <button onclick="confirmDelete('{{ material.id }}')"
+                            class="flex-1 bg-red-100 hover:bg-red-200 text-[#6C5DD3] py-2 px-2 rounded-xl text-xs font-bold">Delete</button>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Material Body -->
+            <div class="p-2">
+                <div class=" mb-0">
+
+                    {% if material.chapter %}
+                    <div class="flex items-center text-sm text-gray-600">
+                        <span class="mr-2">📖</span>
+                        <span>{{ material.chapter.name }}</span>
+                    </div>
+                    {% endif %}
+
+                </div>
+
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-16 bg-white rounded-xl border">
+        <span class="text-6xl mb-4 block">📚</span>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">No materials yet</h3>
+        <p class="text-gray-500 mb-6">Upload your first study material to generate practice questions</p>
+        <a href="{% url 'upload_material' %}"
+            class="inline-block bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 font-medium">
+            Upload Your First Material
+        </a>
+    </div>
+    {% endif %}
+
+
+</div>
+
+<script>
+    function filterMaterials() {
+        const selected = document.getElementById('subjectFilter').value;
+        document.querySelectorAll('.material-item').forEach(item => {
+            if (selected === 'all' || item.dataset.subject === selected) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+
+    function searchMaterials() {
+        const search = document.getElementById('searchMaterial').value.toLowerCase();
+        document.querySelectorAll('.material-item').forEach(item => {
+            const title = item.dataset.title;
+            item.style.display = title.includes(search) ? 'block' : 'none';
+        });
+    }
+
+    function deleteMaterial(id) {
+        if (confirm('Delete this material? All associated questions will be removed.')) {
+            fetch(`/materials/${id}/delete/`, { method: 'POST' })
+                .then(() => {
+                    showNotification('Material deleted successfully', 'success');
+                    location.reload();
+                });
+        }
+    }
+
+    function openUploadModal() {
+        document.getElementById('uploadModal').classList.remove('hidden');
+    }
+
+    function closeUploadModal() {
+        document.getElementById('uploadModal').classList.add('hidden');
+    }
+
+    function showLoader() {
+        // Only show loader if form is valid
+        const form = document.getElementById('uploadForm');
+        if (form.checkValidity()) {
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            document.getElementById('uploadModal').classList.add('hidden');
+        }
+    }
+
+    function confirmDelete(chapterId) {
+        // A simple browser confirmation for safety
+        if (confirm("Are you sure you want to delete this chapter? All AI results and notes will be lost.")) {
+            // Create a hidden form to send a POST request for security
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/materials/chapter/${chapterId}/delete/`;
+
+            // Add CSRF token
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'csrfmiddlewaretoken';
+            hiddenInput.value = csrfToken;
+
+            form.appendChild(hiddenInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ēCoursie Study Planner{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+
+
+        }
+
+        /* Dashboard Container */
+        .app-window {
+            background: white;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+            /* box-shadow: 0 40px 100px -20px rgba(108, 93, 211, 0.15); */
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            background-color: #3f338a;
+            width: max-content;
+            flex-shrink: 0;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 40px 0;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 15px 35px;
+            opacity: 0.6;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-link.active {
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.15);
+            border-left: 4px solid white;
+        }
+
+        /* Content Area */
+        .main-content {
+            flex-grow: 1;
+            padding: 40px 30px;
+            margin: 0.5vw auto;
+            overflow-y: auto;
+            background-color: #FBFAFF;
+            height: 98vh;
+            width: inherit;
+            border-top-left-radius: 1.5rem;
+            border-bottom-left-radius: 1.5rem;
+
+        }
+
+        /* Landing Card for Guest */
+        .auth-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            padding: 60px;
+            border-radius: 3rem;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05);
+            border: 1px solid white;
+            max-width: 500px;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+
+    {% if user.is_authenticated %}
+    <div class="app-window">
+        <aside class="sidebar ">
+            <div class="px-10 mb-12">
+                <h1 class="text-2xl font-bold tracking-tight flex items-center gap-2">
+                    <span
+                        class="bg-white text-[#6C5DD3] w-8 h-8 rounded-lg flex items-center justify-center text-lg">ē</span>
+                    Coursie
+                </h1>
+            </div>
+
+            <nav class="flex-grow">
+                <a href="{% url 'dashboard' %}"
+                    class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <span class="mr-4"><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960"
+                            width="24px" fill="#e3e3e3">
+                            <path
+                                d="M520-600v-240h320v240H520ZM120-440v-400h320v400H120Zm400 320v-400h320v400H520Zm-400 0v-240h320v240H120Zm80-400h160v-240H200v240Zm400 320h160v-240H600v240Zm0-480h160v-80H600v80ZM200-200h160v-80H200v80Zm160-320Zm240-160Zm0 240ZM360-280Z" />
+                        </svg>
+                    </span> Dashboard
+                </a>
+                <a href="{% url 'subjects:subjects_list' %}"
+                    class="nav-link {% if 'subjects' in request.path %}active{% endif %}">
+                    <span class="mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#F9DB78"><path d="M480-160q-48-38-104-59t-116-21q-42 0-82.5 11T100-198q-21 11-40.5-1T40-234v-482q0-11 5.5-21T62-752q46-24 96-36t102-12q58 0 113.5 15T480-740v484q51-32 107-48t113-16q36 0 70.5 6t69.5 18v-480q15 5 29.5 10.5T898-752q11 5 16.5 15t5.5 21v482q0 23-19.5 35t-40.5 1q-37-20-77.5-31T700-240q-60 0-116 21t-104 59Zm80-200v-380l200-200v400L560-360Zm-160 65v-396q-33-14-68.5-21.5T260-720q-37 0-72 7t-68 21v397q35-13 69.5-19t70.5-6q36 0 70.5 6t69.5 19Zm0 0v-396 396Z"/></svg>
+                    </span> All Courses
+                </a>
+                <a href="{% url 'schedule_view' %}" class="nav-link">
+                    <span class="mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#DF9D9B"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h168q13-36 43.5-58t68.5-22q38 0 68.5 22t43.5 58h168q33 0 56.5 23.5T840-760v268q-19-9-39-15.5t-41-9.5v-243H200v560h242q3 22 9.5 42t15.5 38H200Zm0-120v40-560 243-3 280Zm80-40h163q3-21 9.5-41t14.5-39H280v80Zm0-160h244q32-30 71.5-50t84.5-27v-3H280v80Zm0-160h400v-80H280v80Zm200-190q13 0 21.5-8.5T510-820q0-13-8.5-21.5T480-850q-13 0-21.5 8.5T450-820q0 13 8.5 21.5T480-790ZM720-40q-83 0-141.5-58.5T520-240q0-83 58.5-141.5T720-440q83 0 141.5 58.5T920-240q0 83-58.5 141.5T720-40Zm0-60q54 0 93.5-36t45.5-89q-5 2-9.5 3.5T840-220h-40q-17 0-28.5-11.5T760-260v-20h-80v-40q0-17 11.5-28.5T720-360h20q0-5 1-9.5t3-8.5q-6-1-12-1.5t-12-.5q-58 0-99 41t-41 99h80q33 0 56.5 23.5T740-160v20h-60v34q10 3 19.5 4.5T720-100Z"/></svg>
+                    </span> Schedule
+                </a>
+                <a href="{% url 'materials:materials_list' %}" class="nav-link">
+                    <span class="mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#9DC384"><path d="M160-160q-33 0-56.5-23.5T80-240v-400q0-33 23.5-56.5T160-720h240l80-80h320q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm73-280h207v-207L233-440Zm-73-40 160-160H160v160Zm0 120v120h640v-480H520v280q0 33-23.5 56.5T440-360H160Zm280-160Z"/></svg>
+                    </span> Materials
+                </a>
+            </nav>
+
+            <div class="px-10 border-t border-white/10 pt-8 space-y-4">
+                <a href="#" class="text-sm opacity-60 hover:opacity-100 flex items-center">⚙️ Settings</a>
+                <a href="{% url 'accounts:logout' %}" class="text-sm text-red-200 hover:text-white flex items-center">🚪
+                    Logout</a>
+            </div>
+        </aside>
+        <div class="h-[100vh] w-full bg-[#3f338a]">
+
+            <main class="main-content ">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+
+    </div>
+
+    {% else %}
+    <div class="auth-card">
+        <div
+            class="w-20 h-20 bg-[#6C5DD3] rounded-3xl mx-auto mb-6 flex items-center justify-center text-white text-4xl font-bold shadow-lg shadow-indigo-200">
+            ē
+        </div>
+
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Study Planner</h1>
+        <p class="text-gray-500 mb-8">Organize your academic life with intelligence.</p>
+
+        <div class="grid grid-cols-3 gap-4 mb-10">
+            <div class="flex flex-col items-center group">
+                <div
+                    class="w-14 h-14 bg-yellow-50 rounded-2xl flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="28px" viewBox="0 -960 960 960" width="28px"
+                        fill="#EAB308">
+                        <path
+                            d="M40-240q9-107 65.5-197T256-580l-74-128q-6-9-3-19t13-15q8-5 18-2t16 12l74 128q86-36 180-36t180 36l74-128q6-9 16-12t18 2q10 5 13 15t-3 19l-74 128q94 53 150.5 143T920-240H40Zm240-110q21 0 35.5-14.5T330-400q0-21-14.5-35.5T280-450q-21 0-35.5 14.5T230-400q0 21 14.5 35.5T280-350Zm400 0q21 0 35.5-14.5T730-400q0-21-14.5-35.5T680-450q-21 0-35.5 14.5T630-400q0 21 14.5 35.5T680-350Z" />
+                    </svg>
+                </div>
+                <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400">AI Planning</p>
+            </div>
+
+            <div class="flex flex-col items-center group">
+                <div
+                    class="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="28px" viewBox="0 -960 960 960" width="28px"
+                        fill="#22C55E">
+                        <path
+                            d="M80-120v-80h800v80H80Zm40-120v-280h120v280H120Zm200 0v-480h120v480H320Zm200 0v-360h120v360H520Zm200 0v-600h120v600H720Z" />
+                    </svg>
+                </div>
+                <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Tracking</p>
+            </div>
+
+            <div class="flex flex-col items-center group">
+                <div
+                    class="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="28px" viewBox="0 -960 960 960" width="28px"
+                        fill="#6C5DD3">
+                        <path
+                            d="M516-82q-9 2-18 2h-18q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480v18q0 9-2 18l-78-24v-12q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93h12l24 78Zm305 22L650-231 600-80 480-480l400 120-151 50 171 171-79 79Z" />
+                    </svg>
+                </div>
+                <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Practice</p>
+            </div>
+        </div>
+
+        <div class="flex flex-col gap-4">
+            <a href="{% url 'accounts:login' %}"
+                class="bg-[#6C5DD3] text-white py-4 rounded-2xl font-semibold hover:bg-[#5b4eb3] transition-all shadow-lg shadow-indigo-100">
+                Sign In
+            </a>
+            <a href="{% url 'accounts:register' %}"
+                class="bg-white border-2 border-gray-100 text-gray-700 py-4 rounded-2xl font-semibold hover:border-[#6C5DD3] hover:text-[#6C5DD3] transition-all">
+                Create Account
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

@@ -1,0 +1,91 @@
+<!-- SUBJECTS LIST PAGE -->
+<!-- templates/subjects/list.html -->
+{% extends 'base.html' %}
+{% block title %}My Subjects{% endblock %}
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-gray-900">📚 My Subjects</h1>
+        <a href="{% url 'subjects:add_subject' %}"
+            class="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 font-medium">+ Add Subject</a>
+
+       
+    </div>
+    <div class="flex items-center gap-4 mb-10 overflow-x-auto pb-2 pt-2">
+        <span class="text-gray-400 text-sm font-medium">Filter by:</span>
+
+        <select id="difficultyFilter" onchange="location.href='?difficulty=' + this.value"
+            class="bg-white border-none rounded-full px-6 py-2 text-sm shadow-sm font-medium text-gray-600 focus:ring-2 focus:ring-purple-200 cursor-pointer">
+            <option value="">All Levels</option>
+            <option value="1" {% if request.GET.difficulty ==  "1" %}selected{% endif %}>Easy</option>
+            <option value="2" {% if request.GET.difficulty == "2" %}selected{% endif %}>Medium</option>
+            <option value="3" {% if request.GET.difficulty == "3" %}selected{% endif %}>Hard</option>
+        </select>
+        <div class="flex items-center space-x-3">
+
+            <div class="flex items-center space-x-3">
+                <form action="" method="GET" class="relative">
+                    <input type="text" name="search" placeholder="Search subjects..." value="{{ request.GET.search }}"
+                        class="bg-white border-none rounded-xl px-4 py-2 text-sm shadow-sm focus:ring-2 focus:ring-purple-200">
+                    <button type="submit" class="absolute right-2 top-2 text-gray-400">🔍</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% if subjects %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for subject in subjects %}
+        <div class="bg-white rounded-xl p-6 shadow-sm border card-hover">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900">{{ subject.name }}</h3>
+                    <p class="text-sm text-gray-500">{{ subject.code }}</p>
+                </div>
+                <span class="px-3 py-1 rounded-full text-xs font-medium
+                        {% if subject.difficulty == 1 %}bg-green-100 text-green-800
+                        {% elif subject.difficulty == 2 %}bg-yellow-100 text-yellow-800
+                        {% else %}bg-red-100 text-red-800{% endif %}">
+                    {% if subject.difficulty == 1 %}Easy
+                    {% elif subject.difficulty == 2 %}Medium
+                    {% else %}Hard{% endif %}
+                </span>
+            </div>
+
+            <div class="space-y-3">
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-600">Progress</span>
+                    <span class="font-medium">
+                        {{ subject.completed|default:0 }}/{{ subject.total|default:0 }}
+                    </span>                </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-purple-600 h-2 rounded-full transition-all duration-700"
+                             style="width: {{ subject.progress_percent|default:0 }}%">
+                        </div>
+                    </div>
+
+                <div class="flex items-center justify-between pt-4 border-t">
+                    <a href="{% url 'subjects:subject_detail' subject.id %}" class="text-purple-600 hover:text-purple-700 text-sm font-medium">View Details →</a>
+                    
+                    <div class="flex space-x-3">
+                        <a href="{% url 'subjects:edit_subject' subject.id %}" class="text-gray-400 hover:text-blue-500 transition-colors">✏️</a>
+                        <a href="{% url 'subjects:delete_subject' subject.id %}" class="text-gray-400 hover:text-red-500 transition-colors">🗑️</a>
+                    </div>
+                </div>
+
+            </div>
+            
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-12 bg-white rounded-xl border">
+        <span class="text-6xl mb-4 block">📚</span>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">No subjects yet</h3>
+        <p class="text-gray-500 mb-6">Add your first subject to start planning your studies</p>
+        <a href="{% url 'subjects:add_subject' %}"
+            class="inline-block bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 font-medium">Add Your
+            First Subject</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

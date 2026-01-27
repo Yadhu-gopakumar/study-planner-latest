@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-4xl mx-auto py-20 px-6 text-center">
+    <div class="mb-10 inline-flex items-center justify-center w-24 h-24 bg-indigo-50 text-[#6C5DD3] rounded-[2.5rem] text-4xl shadow-inner">
+        {% if attempt.score >= 5 %}🎉{% else %}📚{% endif %}
+    </div>
+
+    <h1 class="text-4xl font-black text-slate-900 mb-4">Exam Completed!</h1>
+    <p class="text-slate-400 mb-12">Performance report for <strong>{{ chapter.title }}</strong></p>
+
+    <div class="bg-white p-12 rounded-[3rem] shadow-xl shadow-indigo-100/40 border border-indigo-50 inline-block min-w-[320px] mb-12 transform hover:scale-[1.02] transition-transform">
+        <p class="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-4">Your Final Grade</p>
+        <div class="flex items-center justify-center">
+            <span class="text-8xl font-black text-[#6C5DD3]">{{ attempt.score }}</span>
+            <span class="text-3xl font-bold text-slate-200 ml-2">/ 10</span>
+        </div>
+        
+        <p class="mt-6 font-bold {% if attempt.score >= 5 %}text-green-500{% else %}text-orange-400{% endif %}">
+            {% if attempt.score >= 8 %}Excellent Mastery!{% elif attempt.score >= 5 %}Good Effort!{% else %}Keep Studying!{% endif %}
+        </p>
+    </div>
+
+    <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+        <a href="{% url 'exams:start_exam' chapter.id %}" class="w-full sm:w-auto px-10 py-4 bg-indigo-50 text-indigo-600 rounded-2xl font-bold hover:bg-indigo-100 transition-all">
+            Try Again
+        </a>
+        <a href="{% url 'subjects:subject_detail' chapter.subject.id %}" class="w-full sm:w-auto px-10 py-4 bg-[#6C5DD3] text-white rounded-2xl font-bold shadow-lg shadow-indigo-100 hover:-translate-y-1 transition-all">
+            Return to Chapter
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Mode | {{ subject.name }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .select-none {
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body::-webkit-scrollbar {
+            display: none;
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+        }
+
+        /* Custom Radio Styling: Highlight the label when the radio is checked */
+        input[type="radio"]:checked+span+.check-mark {
+            display: block;
+        }
+
+        input[type="radio"]:checked~span {
+            color: #4f46e5;
+            font-weight: 700;
+        }
+
+        /* The magical class that highlights the whole box */
+        .option-box:has(input[type="radio"]:checked) {
+            border-color: #4f46e5;
+            background-color: #f5f3ff;
+            box-shadow: 0 0 0 1px #4f46e5;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 select-none overflow-x-hidden text-slate-900">
+
+    <div id="startScreen" class="fixed inset-0 z-[100] flex items-center justify-center bg-indigo-700 p-6">
+        <div class="max-w-md w-full bg-white rounded-[2rem] shadow-2xl p-10 text-center transform transition-all">
+            <div
+                class="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 rotate-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <h1 class="text-3xl font-black text-slate-900 mb-2">{{ subject.name }}</h1>
+            <p class="text-slate-500 mb-8 font-medium">Final Assessment Mode</p>
+
+            <div class="grid grid-cols-2 gap-4 mb-8">
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <p class="text-xs font-bold text-slate-400 uppercase">Questions</p>
+                    <p class="text-xl font-black text-indigo-600">{{ questions.count }}</p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <p class="text-xs font-bold text-slate-400 uppercase">Duration</p>
+                    <p class="text-xl font-black text-indigo-600">5 Mins</p>
+                </div>
+            </div>
+
+            <button onclick="startExamNow()"
+                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-2xl font-bold text-lg shadow-xl shadow-indigo-200 transition-all hover:-translate-y-1 active:scale-95">
+                Begin Exam
+            </button>
+        </div>
+    </div>
+
+    <div id="examInterface" class="hidden min-h-screen">
+        <form id="examForm" method="POST" action="{{ submit_url }}">
+            {% csrf_token %}
+
+            <nav class="sticky top-0 z-50 glass-effect border-b border-slate-200 px-6 py-4">
+                <div class="max-w-5xl mx-auto flex justify-between items-center">
+                    <div class="flex items-center gap-4">
+                        <div id="timer" class="text-2xl font-mono font-black text-indigo-600 tracking-tighter">05:00
+                        </div>
+                        <div class="h-6 w-[1px] bg-slate-200">
+
+                        </div>
+                        <h1 class="text-3xl font-black text-slate-900 mb-2">{{ exam_type }}</h1>
+
+                        <div class="text-sm font-bold text-slate-500">
+                            <span id="answeredCount" class="text-indigo-600">0</span> / {{ questions.count }} Done
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <div id="violation-badge"
+                            class="hidden bg-red-50 text-red-600 px-3 py-1 rounded-full text-xs font-black border border-red-100 uppercase">
+                            Warning: <span id="v-count">0</span>/2
+                        </div>
+                        <button type="button" onclick="confirmEndExam()"
+                            class="bg-slate-900 hover:bg-black text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg active:scale-95">
+                            Submit Answers
+                        </button>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="max-w-3xl mx-auto p-6 md:py-12 space-y-8 pb-32">
+                {% for q in questions %}
+                <div
+                    class="question-card bg-white rounded-[2rem] p-8 md:p-10 border border-slate-200 shadow-sm transition-all">
+                    <div class="flex gap-4 mb-6">
+                        <span
+                            class="flex-shrink-0 w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm">
+                            {{ forloop.counter }}
+                        </span>
+                        <h3 class="text-xl font-bold text-slate-800 leading-relaxed">{{ q.text }}</h3>
+                    </div>
+
+                    <div class="grid gap-3">
+                        {% for opt in q.options_text.splitlines %}
+                        <label
+                            class="option-box group relative flex items-center p-5 border-2 border-slate-100 rounded-2xl cursor-pointer transition-all hover:border-indigo-200 hover:bg-indigo-50/30">
+                            <input type="radio" name="question_{{ q.id }}" value="{{ opt }}" class="sr-only"
+                                onchange="updateProgress()">
+
+                            <div
+                                class="w-6 h-6 border-2 border-slate-200 rounded-full flex items-center justify-center group-hover:border-indigo-400 transition-colors bg-white">
+                                <div class="w-3 h-3 bg-indigo-600 rounded-full hidden"></div>
+                            </div>
+
+                            <span class="ml-4 text-slate-600 font-medium text-lg transition-colors">{{ opt }}</span>
+
+                            <svg class="check-mark hidden absolute right-5 h-6 w-6 text-indigo-600" fill="currentColor"
+                                viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </form>
+    </div>
+
+
+    <script>
+        // Fix: Remove the space after the colon in 'default:0'
+        const TOTAL_QUESTIONS_COUNT = {{ questions.count|default:0 }};
+    
+        let timeLeft = 300;
+        let timerId;
+        let violations = 0;
+        let examActive = false;
+    
+        // We use window. function name to ensure they are globally accessible 
+        // even if the script has minor issues elsewhere
+        window.startExamNow = function () {
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('examInterface').classList.remove('hidden');
+            examActive = true;
+            enterFullscreen();
+            startTimer();
+        };
+    
+        window.updateProgress = function() {
+            const answered = new Set();
+            document.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
+                answered.add(radio.name);
+            });
+            document.getElementById('answeredCount').innerText = answered.size;
+        };
+    
+        function startTimer() {
+            timerId = setInterval(() => {
+                if (timeLeft <= 0) {
+                    clearInterval(timerId);
+                    alert("Time is up! Submitting automatically.");
+                    endExam();
+                } else {
+                    timeLeft--;
+                    updateTimerDisplay();
+                }
+            }, 1000);
+        }
+    
+        function updateTimerDisplay() {
+            const mins = Math.floor(timeLeft / 60);
+            const secs = timeLeft % 60;
+            const display = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            document.getElementById('timer').innerText = display;
+    
+            if (timeLeft < 60) {
+                const timerElem = document.getElementById('timer');
+                timerElem.classList.add('text-red-600', 'animate-pulse');
+            }
+        }
+    
+        function enterFullscreen() {
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen().catch(() => {
+                    console.log("Fullscreen request failed");
+                });
+            }
+        }
+    
+        window.addEventListener('blur', () => {
+            if (!examActive) return;
+            violations++;
+            const badge = document.getElementById('violation-badge');
+            if (badge) {
+                badge.classList.remove('hidden');
+                document.getElementById('v-count').innerText = violations;
+            }
+    
+            if (violations >= 2) {
+                alert("Exam terminated: Integrity violation.");
+                endExam();
+            } else {
+                alert("⚠️ WARNING: Do not leave the exam window!");
+            }
+        });
+    
+        document.addEventListener("fullscreenchange", () => {
+            if (!document.fullscreenElement && examActive) {
+                alert("Return to Fullscreen to continue.");
+                enterFullscreen();
+            }
+        });
+    
+        window.confirmEndExam = function () {
+            const answeredCount = new Set();
+            document.querySelectorAll('input[type="radio"]:checked').forEach(r => answeredCount.add(r.name));
+            const remaining = TOTAL_QUESTIONS_COUNT - answeredCount.size;
+    
+            let msg = "Submit your exam?";
+            if (remaining > 0) msg = `You have ${remaining} unanswered questions. Submit anyway?`;
+    
+            if (confirm(msg)) endExam();
+        };
+    
+        function endExam() {
+            examActive = false;
+            if (timerId) clearInterval(timerId);
+            document.getElementById('examForm').submit();
+        }
+    
+        document.addEventListener('contextmenu', e => e.preventDefault());
+    </script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-4xl mx-auto py-16 px-6 text-center animate-in fade-in duration-700">
+    
+    <div class="mb-8 inline-flex items-center justify-center w-24 h-24 {% if percentage >= 80 %}bg-emerald-50 text-emerald-500{% elif percentage >= 50 %}bg-indigo-50 text-[#6C5DD3]{% else %}bg-orange-50 text-orange-500{% endif %} rounded-[2.5rem] text-4xl shadow-inner border-4 border-white">
+        {% if percentage == 100 %}🏆{% elif percentage >= 80 %}🌟{% elif percentage >= 50 %}🎯{% else %}📖{% endif %}
+    </div>
+
+    <h1 class="text-4xl font-black text-slate-900 mb-2">
+        {% if chapter %}Chapter Quiz Finished{% else %}Subject Exam Finished{% endif %}
+    </h1>
+    <p class="text-slate-400 mb-10">
+        Performance report for <strong>{% if chapter %}{{ chapter.title }}{% else %}{{ subject.name }}{% endif %}</strong>
+    </p>
+
+    <div class="bg-white p-12 rounded-[3rem] shadow-2xl shadow-indigo-100/40 border border-indigo-50 inline-block min-w-[350px] mb-12 relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r {% if percentage >= 80 %}from-emerald-400 to-teal-400{% elif percentage >= 50 %}from-[#6C5DD3] to-indigo-400{% else %}from-orange-400 to-red-400{% endif %}"></div>
+
+        <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Total Accuracy</p>
+        <div class="flex flex-col items-center">
+            <div class="flex items-baseline">
+                <span class="text-8xl font-black text-slate-900 tracking-tighter">{{ score }}</span>
+                <span class="text-3xl font-bold text-slate-300 ml-2">/ {{ total }}</span>
+            </div>
+            <div class="mt-2 px-4 py-1 bg-slate-100 rounded-full text-xs font-black text-slate-500 uppercase">
+                {{ percentage }}% Correct
+            </div>
+        </div>
+        
+        <div class="mt-8 pt-8 border-t border-slate-50">
+            <p class="text-lg font-bold {% if percentage >= 80 %}text-emerald-500{% elif percentage >= 50 %}text-[#6C5DD3]{% else %}text-orange-500{% endif %}">
+                {% if percentage == 100 %}Mastery Achieved! 👑
+                {% elif percentage >= 80 %}Excellent Performance! ✨
+                {% elif percentage >= 50 %}Good Progress! 📈
+                {% else %}Keep Practicing! 💪{% endif %}
+            </p>
+        </div>
+    </div>
+
+    {% if results %}
+    <div class="max-w-2xl mx-auto mb-12 text-left space-y-3">
+        <h3 class="text-sm font-black text-slate-400 uppercase tracking-widest ml-4 mb-4">Question Review</h3>
+        {% for item in results %}
+        <div class="bg-white p-5 rounded-2xl border {% if item.is_correct %}border-emerald-100 bg-emerald-50/20{% else %}border-red-100 bg-red-50/20{% endif %} flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <span class="text-xl">{% if item.is_correct %}✅{% else %}❌{% endif %}</span>
+                <div>
+                    <p class="text-sm font-bold text-slate-800 line-clamp-1">{{ item.text }}</p>
+                    <p class="text-xs text-slate-500">Correct Answer: {{ item.correct }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+        {% if chapter %}
+            <a href="{% url 'exams:chapter_quiz' chapter.id %}" class="w-full sm:w-auto px-10 py-4 bg-indigo-50 text-indigo-600 rounded-2xl font-bold hover:bg-indigo-100 transition-all">
+                Try Again
+            </a>
+            <a href="{% url 'subjects:chapter-questions' chapter.id %}" class="w-full sm:w-auto px-10 py-4 bg-[#6C5DD3] text-white rounded-2xl font-bold shadow-lg shadow-indigo-100 hover:-translate-y-1 transition-all">
+                Continue Learning
+            </a>
+        {% else %}
+            <a href="{% url 'exams:start_exam' subject.id %}" class="w-full sm:w-auto px-10 py-4 bg-indigo-50 text-indigo-600 rounded-2xl font-bold hover:bg-indigo-100 transition-all">
+                Retake Final
+            </a>
+            <a href="{% url 'subjects:subject_detail' subject.id %}" class="w-full sm:w-auto px-10 py-4 bg-[#6C5DD3] text-white rounded-2xl font-bold shadow-lg shadow-indigo-100 hover:-translate-y-1 transition-all">
+                Back to Dashboard
+            </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% block content %}
+<div id="loader"
+    class="hidden fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex flex-col items-center justify-center">
+    <div class="w-16 h-16 border-4 border-[#6C5DD3] border-t-transparent rounded-full animate-spin mb-4"></div>
+    <p class="text-[#6C5DD3] font-bold animate-pulse">generating your exam questions...</p>
+</div>
+
+<div class="bg-sky-50/50 -m-10 p-10 min-h-screen rounded-l-[2.5rem]">
+    <div class="mb-10">
+        <a href="{% url 'subjects:subject_detail' chapter.subject.id %}"
+            class="text-sm font-bold text-[#6C5DD3] hover:underline flex items-center mb-2">
+            ← Back to {{ chapter.subject.name }}
+        </a>
+        <h1 class="text-3xl font-bold text-gray-800">Chapter {{ chapter.chapter_number }}: {{ chapter.title }}</h1>
+    </div>
+    <div class="flex flex-wrap gap-4 mb-8 bg-white/50 p-3 rounded-3xl w-max shadow-sm border border-white">
+        <a href="{% url 'subjects:chapter-summery' chapter.id %}"
+            class="px-8 py-3 rounded-xl font-bold text-sm bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 transition-all">
+            ✨ View AI Summary
+        </a>
+    
+        {% if questions %}
+            <a href="{% url 'exams:chapter_quiz' chapter.id %}" 
+                class="px-8 py-3 rounded-xl font-bold text-sm bg-green-500 text-white shadow-lg shadow-green-100 hover:bg-green-600 hover:-translate-y-1 transition-all flex items-center gap-2">
+                🚀 Take Chapter Quiz
+            </a>
+            
+        {% else %}
+            <a href="{% url 'subjects:generate_exam_questions' chapter.id %}" onclick="showLoader()"
+                class="px-8 py-3 rounded-xl font-bold text-sm bg-[#6C5DD3] text-white hover:-translate-y-1 shadow-lg shadow-indigo-100 transition-all">
+                📝 Generate Practice Questions
+            </a>
+        {% endif %}
+    </div>
+
+
+
+    <div id="section-practice" class="animate-in fade-in slide-in-from-bottom-4 duration-500">
+        {% if questions %}
+        <div class="grid gap-6">
+            {% for q in questions %}
+            <div
+                class="bg-white p-8 rounded-[2rem] shadow-sm border border-transparent hover:border-indigo-100 transition-all">
+                <div class="flex gap-4">
+                    <span
+                        class="w-8 h-8 bg-indigo-50 text-[#6C5DD3] rounded-lg flex items-center justify-center font-bold text-sm shrink-0">
+                        {{ forloop.counter }}
+                    </span>
+
+                    <div class="w-full">
+                        <p class="text-lg font-bold text-gray-800 mb-4">
+                            {{ q.text }}
+                        </p>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+                            {% for option in q.options_text.splitlines %}
+                            <div class="p-4 rounded-xl border border-gray-100 bg-gray-50/50 text-sm text-gray-600">
+                                {{ option }}
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <details class="group">
+                            <summary
+                                class="list-none cursor-pointer inline-flex items-center text-xs font-black text-[#6C5DD3] uppercase tracking-widest bg-indigo-50 px-6 py-3 rounded-xl hover:bg-[#6C5DD3] hover:text-white transition-all">
+                                Reveal Correct Answer
+                            </summary>
+                            <div
+                                class="mt-4 p-5 bg-green-50 rounded-2xl border border-green-100 text-green-800 font-bold">
+                                ✅ {{ q.correct_answer }}
+                            </div>
+                        </details>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% else %}
+        <div class="bg-white p-20 rounded-[3rem] text-center border-2 border-dashed border-indigo-100">
+            <div class="text-5xl mb-6">🎯</div>
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">
+                No practice questions yet
+            </h3>
+            <p class="text-gray-400 mb-8 max-w-md mx-auto">
+                Generate AI-based questions from the chapter summary.
+            </p>
+            <a href="{% url 'subjects:generate_exam_questions' chapter.id %}" onclick="showLoader()"
+                class="inline-block bg-[#6C5DD3] text-white px-12 py-4 rounded-2xl font-bold shadow-lg shadow-indigo-200 hover:-translate-y-1 transition-all">
+                Generate Questions Now
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<script>
+    function showLoader() {
+        document.getElementById('loader').classList.remove('hidden');
+    }
+
+
+</script>
+{% endblock %}

@@ -1,0 +1,131 @@
+<!-- UPLOAD TIMETABLE PAGE -->
+<!-- templates/exams/upload_timetable.html -->
+{% extends 'base.html' %}
+{% block title %}Upload Exam Timetable{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="bg-white rounded-xl p-8 shadow-sm border">
+        <h1 class="text-2xl font-bold text-gray-900 mb-6">📅 Upload Exam Timetable</h1>
+        
+        <form method="POST" enctype="multipart/form-data" id="timetableForm" class="space-y-6">
+            {% csrf_token %}
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Semester/Session</label>
+                <input type="text" name="semester" required 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    placeholder="e.g., Fall 2026, Semester 5">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Upload Timetable PDF *</label>
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-purple-500 transition">
+                    <input type="file" name="timetable_file" required id="timetableFile" 
+                           accept=".pdf" class="hidden" onchange="handleTimetableSelect(this)">
+                    <label for="timetableFile" class="cursor-pointer">
+                        <span class="text-5xl block mb-3">📄</span>
+                        <span class="text-sm text-gray-600 block mb-2">Click to upload exam timetable</span>
+                        <span class="text-xs text-gray-500">PDF format only</span>
+                        <p class="text-sm font-medium text-purple-600 mt-3" id="timetableFileName"></p>
+                    </label>
+                </div>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div class="flex items-start">
+                    <span class="text-2xl mr-3">ℹ️</span>
+                    <div>
+                        <h3 class="font-semibold text-blue-900 mb-2">What happens after upload?</h3>
+                        <ul class="text-sm text-blue-800 space-y-2">
+                            <li>✓ AI extracts exam dates and subjects</li>
+                            <li>✓ Automatically matches with your subjects</li>
+                            <li>✓ Generates optimized study schedule</li>
+                            <li>✓ Prioritizes based on exam proximity</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <p class="text-sm text-yellow-800">
+                    <strong>💡 Tips for best results:</strong>
+                </p>
+                <ul class="text-sm text-yellow-800 mt-2 space-y-1 ml-4">
+                    <li>• Ensure PDF is clear and readable</li>
+                    <li>• Subject names should match your added subjects</li>
+                    <li>• Include date, time, and subject information</li>
+                </ul>
+            </div>
+
+            <div class="flex space-x-4">
+                <button type="submit" class="flex-1 bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 font-medium">
+                    Upload & Process
+                </button>
+                <a href="{% url 'exams_list' %}" class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg hover:bg-gray-300 font-medium text-center">
+                    Cancel
+                </a>
+            </div>
+        </form>
+
+        <div id="processingTimetable" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-xl p-8 max-w-md text-center">
+                <div class="animate-spin text-6xl mb-4">🔄</div>
+                <h3 class="text-xl font-bold mb-2">Processing Timetable...</h3>
+                <p class="text-gray-600">Extracting exam information and creating schedule</p>
+                <div class="mt-4 w-full bg-gray-200 rounded-full h-2">
+                    <div class="bg-purple-600 h-2 rounded-full animate-pulse" style="width: 60%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Existing Timetables -->
+    {% if existing_timetables %}
+    <div class="mt-8 bg-white rounded-xl p-6 shadow-sm border">
+        <h2 class="text-xl font-bold text-gray-900 mb-4">📋 Previous Timetables</h2>
+        <div class="space-y-3">
+            {% for tt in existing_timetables %}
+            <div class="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                <div>
+                    <p class="font-medium text-gray-900">{{ tt.semester }}</p>
+                    <p class="text-sm text-gray-600">Uploaded on {{ tt.uploaded_at|date:"M d, Y" }}</p>
+                </div>
+                <div class="flex space-x-2">
+                    <a href="{{ tt.timetable_file.url }}" target="_blank" 
+                       class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-sm">
+                        View PDF
+                    </a>
+                    <button onclick="deleteTimetable({{ tt.id }})" 
+                            class="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-sm">
+                        Delete
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function handleTimetableSelect(input) {
+    const file = input.files[0];
+    if (file) {
+        document.getElementById('timetableFileName').textContent = 
+            `Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+    }
+}
+
+document.getElementById('timetableForm').addEventListener('submit', function() {
+    document.getElementById('processingTimetable').classList.remove('hidden');
+});
+
+function deleteTimetable(id) {
+    if (confirm('Delete this timetable?')) {
+        // AJAX delete request
+        fetch(`/exams/timetable/${id}/delete/`, {method: 'POST'})
+            .then(() => location.reload());
+    }
+}
+</script>
+{% endblock %}

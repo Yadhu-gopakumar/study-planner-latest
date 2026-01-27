@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Practice{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">🎯 Practice Mode</h1>
+
+<form method="POST" action="{% url 'start_practice' %}">
+    {% csrf_token %}
+
+    <label class="block mb-2 font-medium">Select Subject</label>
+    <select name="subject_id" class="border p-2 rounded w-full mb-4" required>
+        {% for subject in request.user.subject_set.all %}
+        <option value="{{ subject.id }}">{{ subject.name }}</option>
+        {% endfor %}
+    </select>
+
+    <button type="submit"
+        class="bg-purple-600 text-white px-6 py-2 rounded hover:bg-purple-700">
+        Start Practice
+    </button>
+</form>
+{% endblock %}
