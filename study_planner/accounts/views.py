@@ -67,3 +67,27 @@ def logout_view(request):
     return redirect('scheduler:dashboard')
 
 
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+
+@login_required
+def settings_view(request):
+    user = request.user
+    if request.method == "POST":
+        # Handle Profile Update
+        user.first_name = request.POST.get('first_name')
+        user.last_name = request.POST.get('last_name')
+        user.email = request.POST.get('email')
+        
+        # Handle Notification Toggles (Assuming fields on a Profile model)
+        profile = user.profile
+        profile.email_notifications = 'email_notify' in request.POST
+        profile.push_notifications = 'push_notify' in request.POST
+        
+        user.save()
+        profile.save()
+        messages.success(request, "Settings updated successfully!")
+        return redirect('accounts:settings')
+
+    return render(request, "accounts/settings.html")

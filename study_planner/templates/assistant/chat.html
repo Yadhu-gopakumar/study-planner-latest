@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    .main-content{
+        padding: 0 !important;
+    }
+</style>
+<div class="flex h-full bg-white rounded-[2.5rem] p-5 shadow-sm border border-gray-100 overflow-hidden ">
+    
+    <div class="w-1/5 border-r border-gray-50 flex flex-col bg-gray-200 rounded-[2.5rem]">
+        <div class="p-6">
+            <h2 class="text-xl font-black text-indigo-900 mb-4">Messages</h2>
+            <div class="relative">
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto px-1 space-y-2">
+            <div class="bg-indigo-600 p-4 rounded-[1.5rem] text-white flex items-center space-x-3 cursor-pointer shadow-lg shadow-indigo-100">
+                <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-xl">🤖</div>
+                <div class="flex-1 min-w-0">
+                    <p class="font-bold text-sm"> AI Tutor</p>
+                    <p class="text-[10px] text-indigo-100 truncate">Ask me about your notes...</p>
+                </div>
+            </div>
+
+            <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2 mt-6 mb-2">Your Subjects</h3>
+            {% for subject in subjects %}
+            <div class="hover:bg-white p-4 rounded-[1.5rem] flex items-center space-x-3 cursor-pointer transition-all group border-gray-100 border-2">
+                <div class="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 font-bold group-hover:bg-indigo-100">
+                    {{ subject.name|slice:":1" }}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="font-bold text-sm text-gray-800">{{ subject.name }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="flex-1 flex flex-col bg-white">
+        <div class="p-6 border-b border-gray-50 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <div class="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center text-2xl">🤖</div>
+                <div>
+                    <h4 class="font-bold text-indigo-900">Ai assistant</h4>
+                    <span class="flex items-center text-[10px] text-emerald-500 font-bold">
+                        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1 animate-pulse"></span> ALWAYS ONLINE
+                    </span>
+                </div>
+            </div>
+            <button class="text-gray-400 hover:text-indigo-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50/30" id="chat-box">
+            <div class="flex items-start space-x-3 max-w-[80%]">
+                <div class="w-8 h-8 bg-indigo-100 rounded-lg flex-shrink-0 flex items-center justify-center text-sm">🤖</div>
+                <div class="bg-white p-4 rounded-[1.5rem] rounded-tl-none shadow-sm border border-gray-100">
+                    <p class="text-sm text-gray-700 leading-relaxed">Hi {{ request.user.first_name }}!</p>
+                    <span class="text-[9px] text-gray-400 mt-2 block uppercase font-bold">10:45 AM</span>
+                </div>
+            </div>
+
+            <div class="flex items-start justify-end space-x-3 ml-auto max-w-[80%]">
+                <div class="bg-indigo-600 p-4 rounded-[1.5rem] rounded-tr-none shadow-md shadow-indigo-100">
+                    <p class="text-sm text-white leading-relaxed">Yes, please! Let's focus on Round Robin algorithm.</p>
+                    <span class="text-[9px] text-indigo-200 mt-2 block uppercase font-bold">10:46 AM</span>
+                </div>
+                <div class="w-8 h-8 bg-blue-400 rounded-lg flex-shrink-0 flex items-center justify-center text-sm text-white font-bold">{{ request.user.first_name|slice:":1" }}</div>
+            </div>
+        </div>
+
+        <div class="p-6 bg-white">
+            <div class="relative flex items-center">
+                <input type="text" placeholder="Type your message..." class="w-full bg-gray-50 border-none rounded-2xl py-4 pl-6 pr-16 focus:ring-2 focus:ring-indigo-500">
+                <button class="absolute right-2 bg-[#6C5DD3] text-white p-3 rounded-xl hover:scale-105 transition-transform">
+                    <svg class="w-5 h-5 transform rotate-90" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -14,6 +14,8 @@ urlpatterns = [
     path("subjects/", include("subjects.urls")),
     path("exams/", include("exams.urls")),
     path("materials/", include("materials.urls")),
+    path("assistant/", include("assistant.urls")),
+
 
     # Dashboard & schedule (must NOT be empty path again)
     path("", include("scheduler.urls")),

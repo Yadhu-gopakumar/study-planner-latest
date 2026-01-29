@@ -66,7 +66,22 @@
         </p>
 
     </div>
-
+<!-- timer--------- -->
+<div class="bg-white p-6 rounded-xl shadow-sm border mb-6">
+    <div id="timer-ui" class="flex items-center justify-between">
+        <div>
+            <h3 class="text-lg font-bold">Study Session</h3>
+            <p id="timer-status" class="text-sm text-gray-500">Ready to start?</p>
+            <p id="live-clock" class="text-2xl font-mono font-bold text-indigo-600 hidden">00:00:00</p>
+        </div>
+        
+        <button id="session-btn" onclick="handleSession()" 
+            class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition">
+            Start Studying
+        </button>
+    </div>
+</div>
+<!-- timer--------- -->
     <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6 ml-2">Course Curriculum</h3>
 
 
@@ -160,12 +175,14 @@
 
     </div>
 </div>
+
+<!-- ----------loader-------------- -->
 <div id="loader"
     class="hidden fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex flex-col items-center justify-center">
     <div class="w-16 h-16 border-4 border-[#6C5DD3] border-t-transparent rounded-full animate-spin mb-4"></div>
     <p class="text-[#6C5DD3] font-bold animate-pulse">generating your exam questions...</p>
 </div>
-<!-- Loading Indicator -->
+<!-- ----------loader-------------- -->
 
 </div>
 
@@ -224,6 +241,115 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+    const currentSubjectId = "{{ subject.id }}";
+    const currentSubjectName = "{{ subject.name }}";
+
+    function handleSession() {
+        const activeSession = JSON.parse(localStorage.getItem('active_study_session'));
+
+        if (!activeSession) {
+            // START: No timer running anywhere
+            const sessionData = {
+                startTime: Date.now(),
+                subjectId: currentSubjectId,
+                subjectName: currentSubjectName
+            };
+            localStorage.setItem('active_study_session', JSON.stringify(sessionData));
+            startUI(sessionData.startTime);
+        } 
+        else if (activeSession.subjectId === currentSubjectId) {
+            // STOP: Timer is for THIS subject
+            stopSession(activeSession.startTime);
+        } 
+        else {
+            // BLOCK: Timer is for DIFFERENT subject
+            Swal.fire({
+                title: 'Timer Already Running!',
+                text: `You are currently studying ${activeSession.subjectName}. Please end that session before starting a new one.`,
+                icon: 'warning',
+                confirmButtonColor: '#4F46E5'
+            });
+        }
+    }
+
+    function startUI(startTime) {
+        const btn = document.getElementById('session-btn');
+        const clock = document.getElementById('live-clock');
+        const status = document.getElementById('timer-status');
+        
+        btn.innerText = "End Session";
+        btn.classList.replace('bg-indigo-600', 'bg-red-600');
+        clock.classList.remove('hidden');
+        if(status) status.innerText = "Session in progress...";
+
+        // Clear any existing intervals to prevent "speeding" clock
+        if (window.timerInterval) clearInterval(window.timerInterval);
+        
+        window.timerInterval = setInterval(() => {
+            const diff = Math.floor((Date.now() - startTime) / 1000);
+            const h = Math.floor(diff / 3600).toString().padStart(2, '0');
+            const m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
+            const s = (diff % 60).toString().padStart(2, '0');
+            clock.innerText = `${h}:${m}:${s}`;
+        }, 1000);
+    }
+
+    function stopSession(startTime) {
+        const endTime = Date.now();
+        const durationMins = Math.round((endTime - startTime) / 60000);
+
+        // Optional: Minimum study time check (e.g., 1 minute)
+        if (durationMins < 1) {
+            const saveShort = confirm("This session was less than a minute. Save it anyway?");
+            if (!saveShort) {
+                localStorage.removeItem('active_study_session');
+                location.reload();
+                return;
+            }
+        }
+
+        fetch("{% url 'scheduler:save_study_log' %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                subject_id: currentSubjectId,
+                start_time: new Date(parseInt(startTime)).toISOString(),
+                duration: durationMins
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            localStorage.removeItem('active_study_session');
+            location.reload();
+        })
+        .catch(err => {
+            console.error("Error saving log:", err);
+            alert("Failed to save session. Check your connection.");
+        });
+    }
+
+    // Unified Initialization: Runs once when page loads
+    window.addEventListener('load', () => {
+        const activeSession = JSON.parse(localStorage.getItem('active_study_session'));
+        const status = document.getElementById('timer-status');
+        
+        if (activeSession) {
+            if (activeSession.subjectId === currentSubjectId) {
+                // Resume UI for this subject
+                startUI(activeSession.startTime);
+            } else {
+                // Show warning that a session is active elsewhere
+                if(status) status.innerText = `⚠️ You have an active session for ${activeSession.subjectName}`;
+                const btn = document.getElementById('session-btn');
+                btn.title = `Finish studying ${activeSession.subjectName} first`;
+            }
+        }
+    });
+</script>
 <script>
 
     function showLoader() {

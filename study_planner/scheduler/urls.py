@@ -6,7 +6,9 @@ from .views import (
     add_timetable_entry,
     timetable_list,
     generate_schedule_form,
-    generate_schedule_create
+    generate_schedule_create,
+    toggle_study_completion,
+    save_study_log
 )
 
 app_name="scheduler"
@@ -29,5 +31,7 @@ urlpatterns = [
     ),
     path("timetable/add/", add_timetable_entry, name="add_timetable"),
     path("timetable/", timetable_list, name="timetable_list"),
+    path("complete/<int:id>/",toggle_study_completion,name="toggle_study_completion"),
+    path('save-study-log/', save_study_log, name='save_study_log'),
 ]
 
