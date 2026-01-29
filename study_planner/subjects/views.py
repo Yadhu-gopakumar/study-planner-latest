@@ -7,7 +7,6 @@ from .question_generator import generate_questions_from_pdf, extract_text_from_p
 import requests
 from google import genai
 import traceback
-from exams.models import ChapterProgress
 from django.http import JsonResponse
 from .question_generator import generate_questions_from_text
 from openai import OpenAI
@@ -330,6 +329,7 @@ def process_ai_view(request, chapter_id):
         
         chapter.summary = json.dumps(final_data, indent=2)
         chapter.save()
+        from exams.models import ChapterProgress
         
         progress, created = ChapterProgress.objects.get_or_create(
             user=request.user,
@@ -454,9 +454,17 @@ CONTENT:
 
         except Exception as e:
             print("DeepSeek error:", e)
-    progress = ChapterProgress.objects.get(user=request.user, chapter=chapter_id)
+            
+    from exams.models import ChapterProgress
+    
+    progress, created = ChapterProgress.objects.get_or_create(
+        user=request.user,
+        chapter=chapter
+    )
+    
     progress.questions_generated = True
     progress.save()
+    
     messages.success(
         request,
         f"{saved} exam questions generated successfully!"

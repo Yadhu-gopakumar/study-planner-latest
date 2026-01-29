@@ -106,14 +106,46 @@ def process_ai_view(request, chapter_id):
             error_message = result.get('ErrorMessage', ['Unknown OCR Error'])[0]
             raise Exception(f"OCR Error: {error_message}")
 
-        summary_result = call_deepseek_api(f"The following is raw OCR text. Clean up typos and summarize clearly: {raw_text}")
+        summary_result = call_deepseek_api(
+            f"""
+        You are an academic assistant for students.
+
+        TASK:
+        1. Write ONE SIMPLE paragraph summary using easy English.
+        2. Extract point-wise information ONLY IF explicitly present:
+        - Applications
+        - Advantages
+        - Disadvantages
+        - Limitations
+        - Key points
+
+        RULES:
+        - Do NOT invent content
+        - Do NOT use markdown
+        - Return JSON ONLY in this exact format:
+
+        {{
+        "summary_paragraph": "<paragraph>",
+        "points": {{
+            "applications": [],
+            "advantages": [],
+            "disadvantages": [],
+            "limitations": [],
+            "key_points": []
+        }}
+        }}
+
+        TEXT:
+        {raw_text}
+        """
+        )
         
         # 4. Save to Model
         chapter.summary = summary_result
         chapter.is_not_pdf=True
         chapter.save()
         
-        return redirect('subjects:chapter-summary', chapter_id=chapter.id)
+        return redirect('subjects:chapter-summery', chapter_id=chapter.id)
 
     except requests.exceptions.RequestException as e:
         return render(request, 'error.html', {'message': f'Network error: Could not connect to OCR service.'})

@@ -155,10 +155,10 @@
         <span class="text-6xl mb-4 block">📚</span>
         <h3 class="text-xl font-semibold text-gray-900 mb-2">No materials yet</h3>
         <p class="text-gray-500 mb-6">Upload your first study material to generate practice questions</p>
-        <a href="{% url 'upload_material' %}"
+        <button onclick="openUploadModal()"
             class="inline-block bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 font-medium">
             Upload Your First Material
-        </a>
+        </button>
     </div>
     {% endif %}
 

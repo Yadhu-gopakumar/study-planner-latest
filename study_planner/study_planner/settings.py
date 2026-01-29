@@ -26,7 +26,6 @@ INSTALLED_APPS = [
     'exams',
     'scheduler',
     'materials',
-    'practice',
     'assistant',
     'core',
     'django.contrib.admin',
@@ -116,9 +115,9 @@ STATIC_URL = 'static/'
 
 
 
-LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'dashboard'
-LOGOUT_REDIRECT_URL = 'home'
+LOGIN_URL = 'accounts:login'
+LOGIN_REDIRECT_URL = 'scheduler:dashboard'
+LOGOUT_REDIRECT_URL = 'scheduler:dashboard'
 
 
 MEDIA_URL = '/study-materials/'

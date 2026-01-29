@@ -7,7 +7,7 @@ from .models import User, StudentProfile
 
 def login_view(request):
     if request.user.is_authenticated:
-        return redirect('dashboard')
+        return redirect('scheduler:dashboard')
 
     if request.method == 'POST':
         email = request.POST.get('email')
@@ -24,7 +24,7 @@ def login_view(request):
             else:
                 request.session.set_expiry(60 * 60 * 24 * 14)
 
-            return redirect('dashboard')
+            return redirect('scheduler:dashboard')
         else:
             messages.error(request, 'Invalid email or password')
 
@@ -53,18 +53,17 @@ def register_view(request):
 
         StudentProfile.objects.create(
             user=user,
-            study_hours_per_day=request.POST.get("study_hours_per_day", 4),
             learning_pace=request.POST.get("learning_pace", "medium"),
         )
 
         login(request, user)
-        return redirect("dashboard")
+        return redirect("scheduler:dashboard")
 
     return render(request, "accounts/register.html")
 
 
 def logout_view(request):
     logout(request)
-    return redirect('dashboard')
+    return redirect('scheduler:dashboard')
 
 

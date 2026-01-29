@@ -1,0 +1,27 @@
+<h2>My Timetable</h2>
+
+<a href="{% url 'scheduler:add_timetable' %}">Add Entry</a>
+
+<table border="1">
+  <tr>
+    <th>Day</th>
+    <th>Start</th>
+    <th>End</th>
+    <th>Subject</th>
+    <th>Break</th>
+  </tr>
+
+  {% for e in entries %}
+  <tr>
+    <td>{{ e.day }}</td>
+    <td>{{ e.start_time }}</td>
+    <td>{{ e.end_time }}</td>
+    <td>{{ e.subject }}</td>
+    <td>{{ e.is_break }}</td>
+  </tr>
+  {% empty %}
+  <tr>
+    <td colspan="5">No timetable entries yet</td>
+  </tr>
+  {% endfor %}
+</table>

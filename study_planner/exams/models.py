@@ -3,6 +3,26 @@ from django.conf import settings
 from subjects.models import Chapter
 
 
+class Exam_time_table(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True, blank=True
+    )
+
+    subject = models.ForeignKey(
+        "subjects.Subject",
+        on_delete=models.CASCADE
+    )
+
+    exam_date = models.DateField()
+
+
+    def __str__(self):
+        return f"{self.subject.name} – {self.exam_date}"
+
+
+
 class Exam(models.Model):
     subject = models.ForeignKey(
         "subjects.Subject",   

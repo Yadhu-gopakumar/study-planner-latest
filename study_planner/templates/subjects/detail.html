@@ -131,9 +131,20 @@
                     Delete 🗑️
                 </button>
                 <button onclick="openEditModal('{{ slot.data.id }}')"
-                    class="flex-grow bg-gray-50 text-[#6C5DD3] py-2 rounded-xl text-xs font-bold">
+                    class="flex-grow bg-gray-200 hover:bg-gray-300 text-[#6C5DD3] py-2 rounded-xl text-xs font-bold">
                     Update ✏️
                 </button>
+                {% if slot.data.is_pdf %}
+                <a href="{% url 'subjects:process_ai_view' slot.data.id %}" onclick="startAILoading()" >
+                    {% else %}
+                    <a href="{% url 'materials:process_ai_view' slot.data.id %}" onclick="startAILoading()"
+ >
+                        {% endif %}
+                        <button
+                            class="flex-grow bg-indigo-500 hover:bg-indigo-700 text-[#ffffff] py-2 px-2 rounded-xl text-xs font-bold">
+                            View Summary ✨
+                        </button>
+                    </a>
             </div>
         </div>
 

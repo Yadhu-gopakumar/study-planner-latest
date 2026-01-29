@@ -9,32 +9,11 @@
                 <p class="text-gray-400 text-sm mt-1">Manage and track your learning progress</p>
             </div>
             <div class="flex items-center space-x-3">
-                
-                <div class="flex items-center space-x-3">
-                    <form action="" method="GET" class="relative">
-                        <input type="text" name="search" placeholder="Search subjects..."
-                            value="{{ request.GET.search }}"
-                            class="bg-white border-none rounded-xl px-4 py-2 text-sm shadow-sm focus:ring-2 focus:ring-purple-200">
-                        <button type="submit" class="absolute right-2 top-2 text-gray-400">🔍</button>
-                    </form>
-                </div>
-                 <button
-                    class="p-3 bg-white rounded-xl shadow-sm text-gray-400 hover:text-[#6C5DD3] transition-colors">🔔</button>
+
+
             </div>
         </div>
 
-        <div class="flex items-center gap-4 mb-10 overflow-x-auto pb-2">
-            <span class="text-gray-400 text-sm font-medium">Filter by:</span>
-
-            <select id="difficultyFilter" onchange="location.href='?difficulty=' + this.value"
-                class="bg-white border-none rounded-full px-6 py-2 text-sm shadow-sm font-medium text-gray-600 focus:ring-2 focus:ring-purple-200 cursor-pointer">
-                <option value="">All Levels</option>
-                <option value="1" {% if request.GET.difficulty ==  "1" %}selected{% endif %}>Easy</option>
-                <option value="2" {% if request.GET.difficulty == "2" %}selected{% endif %}>Medium</option>
-                <option value="3" {% if request.GET.difficulty == "3" %}selected{% endif %}>Hard</option>
-            </select>
-          
-        </div>
 
         <div class="space-y-6">
 
@@ -61,6 +40,37 @@
             </div>
             {% endfor %}
 
+            <div class="bg-white rounded-xl shadow border p-5">
+                <h2 class="text-lg font-semibold mb-4">🕘 Today’s Timetable</h2>
+
+                {% if timetable_entries %}
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse">
+                        <tr class="bg-gray-100">
+                            <th class="text-start pl-5">Time</th>
+                            <th class="text-start pl-5">Subject</th>
+                            <th class="text-start pl-5">Type</th>
+                        </tr>
+
+                        {% for entry in timetable_entries %}
+                        <tr class="{% if entry.is_break %}bg-white{% else %}bg-yellow-100{% endif %}">
+                            <td class="px-4 py-2 font-mono">
+                                {{ entry.start_time|time:"H:i" }} – {{ entry.end_time|time:"H:i" }}
+                            </td>
+                            <td class="px-4 py-2">{{ entry.subject }}</td>
+                            <td class="px-4 py-2">
+                                {% if entry.is_break %}Break{% else %}Study{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+
+                </div>
+                {% else %}
+                <p class="text-gray-400 text-sm">No timetable entries for today</p>
+                {% endif %}
+            </div>
+
             <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-10 mb-4">Your Subjects</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {% for subject in subjects %}
@@ -70,7 +80,7 @@
                         <div class="flex justify-between items-start mb-4">
                             <div
                                 class="w-14 h-14 {% if subject.difficulty == 3 %}bg-red-50 text-red-500{% elif subject.difficulty == 2 %}bg-orange-50 text-orange-500{% else %}bg-green-50 text-green-500{% endif %} rounded-2xl flex items-center justify-center text-2xl">
-                                {% if subject.difficulty == 3 %}🧠{% elif subject.difficulty == 2 %}📚{% else %}🌱{% endif %}
+                                {% if subject.difficulty == 3 %}🧠{% elif subject.difficulty == 2 %}📚{% else %}🌱{%endif %}
                             </div>
                             <span
                                 class="text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest 
@@ -85,7 +95,7 @@
                         <div class="space-y-2 mb-6">
                             <div class="flex justify-between text-[11px] font-bold">
                                 <span class="text-gray-400 uppercase tracking-tighter">Progress</span>
-                                <span class="text-indigo-600">{{ subject.completed_chapters }}/{{ subject.total_chapters}} Ch.</span>
+                                <span class="text-indigo-600">{{ subject.completed_chapters }}/{{subject.total_chapters}} Ch.</span>
                             </div>
                             <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
                                 <div class="h-full bg-[#6C5DD3] rounded-full transition-all duration-700"
@@ -96,19 +106,22 @@
                     </div>
 
                     <div class="flex items-center justify-between mt-auto pt-4 border-t border-gray-50">
-                        <p class="text-[10px] text-gray-400">Added {{ subject.created_at|date:"M d" }}</p>
+                        <p class="text-[10px] text-gray-400">Added {{ subject.created_at | date:"M d" }}</p>
                         <button class="text-[#6C5DD3] text-sm font-bold hover:underline">View Notes</button>
                     </div>
                 </div>
-               {% empty %}
+                {% empty %}
 
                 <div
                     class="col-span-full py-12 bg-white/50 rounded-[2rem] border-2 border-dashed border-sky-100 text-center">
-                    <p class="text-gray-400 italic">No subjects added yet. Click "+ Add Subject" to begin.</p>
+                    <p class="text-gray-400 italic">No subjects added yet </p>
                 </div>
-                
+
                 {% endfor %}
             </div>
+
+
+
         </div>
     </div>
 
@@ -130,25 +143,22 @@
         </div>
 
         <style>
-            #calendar {
-                width: 100% !important;
-            }
-
-            .fc-view-harness {
-                width: 100% !important;
-            }
-
-            .fc-scrollgrid,
-            .fc-scrollgrid table {
-                width: 100% !important;
-                table-layout: fixed !important;
-            }
-
-
+            /* ===== Calendar Container ===== */
             #calendar-container {
                 width: 100%;
                 min-width: 220px;
-                /* Prevents it from getting too tiny on small laptops */
+                padding: 10px;
+            }
+
+            /* ===== FullCalendar Base ===== */
+            #calendar,
+            .fc,
+            .fc-view-harness,
+            .fc-scrollgrid,
+            .fc-scrollgrid table,
+            .fc-scrollgrid-sync-table,
+            .fc .fc-daygrid-body {
+                width: 100% !important;
             }
 
             .fc {
@@ -156,46 +166,107 @@
                 max-width: 100%;
             }
 
-            /* Adjust the spacing between dates so they aren't squashed */
-            .fc .fc-daygrid-body {
-                width: 100% !important;
-            }
-
-            .fc-scrollgrid-sync-table {
-                width: 100% !important;
-            }
-
-            /* Header Styling */
-            .fc-toolbar-title {
-                font-size: 0.9rem !important;
-                font-weight: 700;
-                color: #312E81;
-            }
-
-            /* Column Headers (Mon, Tue, etc.) */
-            .fc-col-header-cell-cushion {
-                font-size: 10px;
-                padding: 5px 0 !important;
-                color: #9CA3AF !important;
-            }
-
-            /* Day Numbers */
-            .fc-daygrid-day-number {
-                font-size: 11px !important;
-                padding: 10px !important;
-                display: block;
-                text-align: center;
-                width: 100%;
-            }
-
-            /* Remove borders for that flat "App" look */
+            /* ===== Remove Borders (Flat App Look) ===== */
             .fc-theme-standard td,
             .fc-theme-standard th,
             .fc-scrollgrid {
                 border: none !important;
             }
 
-            /* Event dots (to keep the calendar from getting taller with events) */
+            /* ===== Toolbar ===== */
+            .fc-toolbar-title {
+                font-size: 0.9rem !important;
+                font-weight: 700;
+                color: #312E81;
+            }
+
+            /* ===== Navigation Buttons ===== */
+            .fc .fc-button-primary {
+                background-color: #f3f4f6 !important;
+                border: none !important;
+                color: #312E81 !important;
+                border-radius: 8px !important;
+                padding: 4px 8px !important;
+                transition: background-color 0.2s ease;
+            }
+
+            .fc .fc-button-primary:hover {
+                background-color: #e5e7eb !important;
+            }
+
+            /* ===== Column Headers ===== */
+            .fc-col-header-cell-cushion {
+                font-size: 10px;
+                padding: 5px 0 !important;
+                color: #9CA3AF !important;
+            }
+
+            /* ===== Day Cells ===== */
+            .fc-daygrid-day {
+                transition: background-color 0.15s ease;
+            }
+
+            .fc-daygrid-day:hover {
+                background-color: #f9fafb;
+                cursor: pointer;
+            }
+
+            /* Center day number */
+            .fc-daygrid-day-top {
+                justify-content: center !important;
+            }
+
+            /* Day number */
+            .fc-daygrid-day-number {
+                font-size: 11px !important;
+                padding: 8px !important;
+                display: block;
+                text-align: center;
+                width: 100%;
+                font-weight: 500;
+                color: #4B5563;
+            }
+
+            /* ===== Today Highlight ===== */
+            .fc-day-today {
+                background-color: #EEF2FF !important;
+                border-radius: 12px;
+            }
+
+            /* ===== Events (Compact Pills) ===== */
+           /* Make all calendar events look like pills */
+.fc-event {
+    border-radius: 50px !important; /* Forces the capsule shape */
+    padding: 3px 10px !important;
+    border: none !important;
+    margin-top: 2px !important;
+    margin-bottom: 2px !important;
+    font-family: 'Poppins', sans-serif;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Ensure All-Day events (Exams) also follow the styling */
+.fc-daygrid-block-event {
+    border-radius: 50px !important;
+}
+
+/* Adjust the title inside the event */
+.fc-event-title {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: white !important;
+}
+
+/* Style for the day cell to look cleaner */
+.fc-daygrid-day.fc-day-today {
+    background-color: #f0f4ff !important;
+    border-radius: 10px;
+}
+            .fc-event-main {
+                color: #ffffff !important;
+            }
+
+            /* Prevent calendar height jump */
             .fc-daygrid-event-harness {
                 margin: 0 4px !important;
             }
@@ -205,6 +276,7 @@
     </div>
 </div>
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 
 <script>
@@ -212,6 +284,15 @@
         const calendarEl = document.getElementById('calendar');
         const calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
+            dayMaxEvents: 2, // 👈 This is the magic line. Show only 2 events per day.
+            moreLinkClick: 'popover', // Opens a nice floating box when clicked
+    // Add this block to format the time
+    eventTimeFormat: { 
+        hour: 'numeric',
+        minute: '2-digit',
+        meridiem: 'short', // shows 'am/pm'
+        hour12: true       // set to false for 24-hour clock (18:00)
+    },
             handleWindowResize: true,
             contentHeight: 'auto',
             headerToolbar: {
@@ -225,8 +306,22 @@
             events: '/api/get-schedule-events/',
 
             eventClick: function (info) {
-                alert('Event: ' + info.event.title);
-                // You can open a modal here to show study details
+                Swal.fire({
+                    title: info.event.title,
+                    html: `
+            <div style="text-align: left; font-family: 'Poppins', sans-serif;">
+                <p><b>time:</b> ${info.event.start.toLocaleTimeString() || ''}</p>
+                <p><b>Details:</b> ${info.event.extendedProps.description || 'No description provided.'}</p>
+            </div>
+        `,
+                    icon: 'info',
+                    confirmButtonColor: '#312E81',
+                    confirmButtonText: 'Got it!',
+                    buttonsStyling: true,
+                    customClass: {
+                        popup: 'rounded-[2rem]', // Tailwind class if using it
+                    }
+                });
             },
             dayCellDidMount: function (info) {
                 // Remove the default hover effects to keep it clean

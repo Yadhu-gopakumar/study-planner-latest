@@ -6,20 +6,14 @@ from django.conf.urls.static import static
 
 
 urlpatterns = [
-    # Admin (for testing & debugging)
     path("admin/", admin.site.urls),
 
-    # Public homepage (landing page)
-    # path("", include("core.urls")),
-
-    # Authentication
     path("accounts/", include("accounts.urls")),
 
     # Main features
     path("subjects/", include("subjects.urls")),
     path("exams/", include("exams.urls")),
     path("materials/", include("materials.urls")),
-    path("practice/", include("practice.urls")),
 
     # Dashboard & schedule (must NOT be empty path again)
     path("", include("scheduler.urls")),
