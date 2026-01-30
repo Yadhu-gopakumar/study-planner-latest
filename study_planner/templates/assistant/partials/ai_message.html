@@ -1,0 +1,44 @@
+{% with msg_id=messages.last.id|default:"temp_id" %}
+<div class="flex items-start space-x-3 max-w-[80%] mb-4 message-appear">
+    <div class="w-8 h-8 bg-indigo-100 rounded-lg flex-shrink-0 flex items-center justify-center text-sm">🤖</div>
+    
+    <div class="bg-white p-4 rounded-[1.5rem] rounded-tl-none shadow-sm border border-gray-100">
+        <p id="typing-{{ msg_id }}" class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap"></p>
+        <span class="text-[9px] text-gray-400 mt-2 block uppercase font-bold">Just Now</span>
+    </div>
+</div>
+
+{{ reply|json_script:msg_id }}
+
+<script>
+    (function() {
+        const msgId = "{{ msg_id }}";
+        const content = JSON.parse(document.getElementById(msgId).textContent);
+        const target = document.getElementById("typing-" + msgId);
+        let i = 0;
+        const speed = 15; 
+
+        function typeWriter() {
+            if (i < content.length) {
+                // Use .textContent for safety, or .innerHTML if you want to support formatting
+                target.textContent += content.charAt(i);
+                i++;
+                
+                // Auto-scroll logic
+                const chatBox = document.getElementById('chat-box');
+                if (chatBox) {
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+                
+                setTimeout(typeWriter, speed);
+            }
+        }
+        
+        // Clean up the script tag to keep DOM light
+        document.getElementById(msgId).remove();
+        
+        // Start the effect
+        typeWriter();
+    })();
+</script>
+{% endwith %}
