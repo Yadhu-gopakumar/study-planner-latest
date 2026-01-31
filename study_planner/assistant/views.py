@@ -11,12 +11,11 @@ from openai import OpenAI
 from .models import ChatSession,ChatMessage
 
 client = OpenAI(
-    # api_key=settings.DEEPSEEK_API_KEY,
     api_key=os.getenv("DEEPSEEK_API_KEY"),
     base_url="https://api.deepseek.com"
 )
 
-MAX_CHARS = 12000  # safe for DeepSeek
+MAX_CHARS = 12000 
 
 def get_subject_context(subject):
     chapters = subject.chapters.all().order_by("chapter_number")
@@ -38,12 +37,16 @@ def deepseek_chat(question, subject_context):
         {
             "role": "system",
             "content": (
-                "You are an AI tutor for a student. "
-                f"Here are the syllabus notes: {subject_context} "  # <-- Added context here
-                "Answer strictly using the provided syllabus notes above. "
-                "Do not use outside knowledge. "
-                "If the answer is not found in the notes, reply exactly: "
-                "'This topic is not covered in your syllabus.'"
+                "You are an expert AI tutor. Your goal is to help the student understand their syllabus. "
+                f"### SYLLABUS CONTEXT:\n{subject_context}\n\n"  
+                "### GUIDELINES:\n"
+                "1. Base your answers on the provided syllabus notes.\n"
+                "2. If a concept is in the notes, you ARE allowed to explain it in more detail, "
+                "provide simple examples, or clarify difficult parts to help the student learn.\n"
+                "3. If the user asks about a topic COMPLETELY unrelated to the syllabus context "
+                "(e.g., a different subject or unrelated general knowledge), "
+                "reply: 'This topic is not covered in your syllabus.'\n"
+                "4. Keep the tone encouraging and academic."
             )
         },
         {
@@ -51,7 +54,6 @@ def deepseek_chat(question, subject_context):
             "content": question
         }
     ]
-
     response = client.chat.completions.create(
         model="deepseek-chat",
         messages=messages,
@@ -64,8 +66,6 @@ def deepseek_chat(question, subject_context):
 @login_required
 def chat_view(request):
     subjects = Subject.objects.filter(user=request.user)
-    # This example loads the most recent session's messages
-    # You could also pass a session_id in the URL to load specific ones
     last_session = ChatSession.objects.filter(user=request.user).last()
     history = []
     if last_session:
@@ -76,51 +76,6 @@ def chat_view(request):
         "history": history,
     })
 
-# @login_required
-# def chat_htmx(request):
-#     question = request.POST.get("question")
-#     subject_id = request.POST.get("subject_id")
-
-#     if not subject_id:
-#         # Return a small snippet if no subject selected
-#         return HttpResponse("<div class='text-red-500 p-2'>Please select a subject first.</div>")
-
-#     try:
-#         subject = Subject.objects.get(id=subject_id, user=request.user)
-        
-#         # 1. Get or Create a Session for this user and subject
-#         session, created = ChatSession.objects.get_or_create(
-#             user=request.user, 
-#             subject=subject
-#         )
-
-#         # 2. Get the context from chapters
-#         context = get_subject_context(subject)
-
-#         # 3. Get AI Response
-#         reply = deepseek_chat(question, context)
-
-#         # 4. Save User Message
-#         ChatMessage.objects.create(
-#             session=session,
-#             role="user",
-#             content=question
-#         )
-
-#         # 5. Save AI Message
-#         ChatMessage.objects.create(
-#             session=session,
-#             role="ai",
-#             content=reply
-#         )
-
-#         return render(request, "assistant/partials/ai_message.html", {
-#             "reply": reply,
-#             "question": question
-#         })
-        
-#     except Subject.DoesNotExist:
-#         return HttpResponse("Subject not found.", status=404)
 
 def check_for_greetings(question, user):
     """
@@ -140,7 +95,7 @@ def check_for_greetings(question, user):
         # Use the user's name if available, otherwise 'there'
         name = user.first_name if user.first_name else "there"
         
-        # Personalized response based on time (optional)
+        # Personalized response based on time
         if 'morning' in clean_q:
             return f"Good morning, {name}! Ready to tackle your syllabus today?"
         elif 'night' in clean_q:
@@ -179,7 +134,7 @@ def chat_htmx(request):
         return render(request, "assistant/partials/ai_message.html", {
             "reply": reply,
             "question": question,
-            "message": msg_obj  # Passing the object ensures the timestamp works!
+            "message": msg_obj  
         })
         
     except Subject.DoesNotExist:
@@ -207,10 +162,8 @@ from django.http import HttpResponse
 
 @login_required
 def delete_chat(request, subject_id):
-    # Find and delete the session and its messages
     ChatSession.objects.filter(user=request.user, subject_id=subject_id).delete()
     
-    # Return the "Initial State" HTML fragment to clear the UI
     initial_html = """
         <div id="initial-state" class="h-full flex flex-col items-center justify-center text-center space-y-4">
             <div class="text-6xl">📥</div>
