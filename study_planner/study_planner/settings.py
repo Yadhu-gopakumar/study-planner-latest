@@ -27,7 +27,6 @@ INSTALLED_APPS = [
     'scheduler',
     'materials',
     'assistant',
-    'core',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

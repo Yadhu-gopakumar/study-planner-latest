@@ -61,32 +61,54 @@ def register_view(request):
 
     return render(request, "accounts/register.html")
 
+from django.contrib.messages import get_messages
 
 def logout_view(request):
+    storage = get_messages(request)
+    
+    for message in storage:
+        pass 
+    
     logout(request)
-    return redirect('scheduler:dashboard')
+
+    return redirect('accounts:login') 
 
 
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-
 @login_required
 def settings_view(request):
     user = request.user
+    profile = user.profile  # Get the OneToOne profile
+    
     if request.method == "POST":
-        # Handle Profile Update
+        # 1. Update User model fields
         user.first_name = request.POST.get('first_name')
         user.last_name = request.POST.get('last_name')
-        user.email = request.POST.get('email')
         
-        # Handle Notification Toggles (Assuming fields on a Profile model)
-        profile = user.profile
+        new_email = request.POST.get('email')
+        # Basic check to prevent duplicate emails if they change it
+        if new_email and new_email != user.email:
+            from .models import User
+            if User.objects.filter(email=new_email).exists():
+                messages.error(request, "This email is already in use by another account.")
+            else:
+                user.email = new_email
+
+        # 2. Update StudentProfile fields
         profile.email_notifications = 'email_notify' in request.POST
         profile.push_notifications = 'push_notify' in request.POST
         
+        # --- ADDED LEARNING PACE LOGIC ---
+        new_pace = request.POST.get('learning_pace')
+        if new_pace in ['slow', 'medium', 'fast']:
+            profile.learning_pace = new_pace
+        
+        # 3. Save both
         user.save()
         profile.save()
+        
         messages.success(request, "Settings updated successfully!")
         return redirect('accounts:settings')
 

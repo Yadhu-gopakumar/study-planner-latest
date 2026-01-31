@@ -145,7 +145,6 @@
             Array.from(select.options).forEach(option => {
                 if (!option.value) return;
 
-                // disable if selected elsewhere
                 option.disabled =
                     selectedValues.includes(option.value) &&
                     option.value !== select.value;
@@ -155,7 +154,7 @@
 
     function removeSubject(btn) {
         btn.closest(".subject-row").remove();
-        updateSubjectOptions(); // re-enable options
+        updateSubjectOptions(); 
     }
 
     function removeSubject(btn) {

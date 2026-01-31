@@ -21,7 +21,7 @@ class TimetableEntry(models.Model):
     start_time = models.TimeField()
     end_time = models.TimeField()
 
-    is_break = models.BooleanField(default=False)  # lunch / free hour
+    is_break = models.BooleanField(default=False)  
 
     class Meta:
         ordering = ["day", "start_time"]
@@ -72,13 +72,12 @@ class StudySchedule(models.Model):
     def __str__(self):
         return f"{self.date} {self.subject.name} ({self.task_type})"
 
-# models.py
 class StudyLog(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     subject = models.ForeignKey("subjects.Subject", on_delete=models.CASCADE)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(auto_now_add=True)
-    duration_minutes = models.IntegerField()  # Calculated before saving
+    duration_minutes = models.IntegerField() 
 
     def __str__(self):
         return f"{self.user} - {self.subject.name} - {self.duration_minutes} mins"

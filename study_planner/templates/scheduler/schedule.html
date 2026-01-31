@@ -3,15 +3,29 @@
 {% block title %}Study Schedule{% endblock %}
 {% block content %}
 <style>
-    /* Add to your <style> block */
-.completed-task {
-    pointer-events: none; /* Optional: prevent further clicks until unmasked */
-    transition: all 0.4s ease;
-}
+    .completed-task {
+        pointer-events: none;
+        transition: all 0.4s ease;
+    }
 
-.completed-task button {
-    pointer-events: auto; /* Allow the button to be clicked to 'undo' completion */
-}
+    .completed-task button {
+        pointer-events: auto;
+    }
+
+    button[onclick^="nextWeek"],
+    button[onclick^="previousWeek"] {
+        cursor: pointer !important;
+        z-index: 50;
+        position: relative;
+        display: flex;
+        transition: all 0.2s ease;
+    }
+
+    button[onclick^="nextWeek"]:hover,
+    button[onclick^="previousWeek"]:hover {
+        background-color: #f3f4f6 !important;
+        transform: scale(1.1);
+    }
 </style>
 <div class="space-y-6">
     <!-- Header -->
@@ -23,10 +37,12 @@
         <div class="flex space-x-3">
             <button onclick="confirmGenerateSchedule()"
                 class="bg-purple-600 flex gap-2 text-white px-6 py-3 rounded-lg hover:bg-purple-700 font-medium">
-                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFF55">
-                    <path d="m786-146 28-28-74-74v-112h-40v128l86 86ZM500-413v-147h100l-40-40h-60v-160q0-17 11.5-28.5T540-800h97q11 0 20.5 5.5T672-779l78 139h-58l-40-80h-92v40h68l40 80h104l59 103q-26-11-54-17t-57-6q-67 0-124.5 29T500-413Zm-80 253h-97q-11 0-20.5-5.5T288-181l-78-139h58l40 80h92v-40h-68l-40-80H188l-57-100q-2-5-3.5-10t-1.5-10q0-4 5-20l57-100h104l40-80h68v-40h-92l-40 80h-58l78-139q5-10 14.5-15.5T323-800h97q17 0 28.5 11.5T460-760v160h-60l-40 40h100v120h-88l-40-80h-92l-40 40h108l40 80h112v56q-10 24-15 50t-5 54q0 17 1.5 34t6.5 34q-5 5-12.5 8.5T420-160ZM720-40q-83 0-141.5-58.5T520-240q0-83 58.5-141.5T720-440q83 0 141.5 58.5T920-240q0 83-58.5 141.5T720-40Z"/>
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                    fill="#FFFF55">
+                    <path
+                        d="m786-146 28-28-74-74v-112h-40v128l86 86ZM500-413v-147h100l-40-40h-60v-160q0-17 11.5-28.5T540-800h97q11 0 20.5 5.5T672-779l78 139h-58l-40-80h-92v40h68l40 80h104l59 103q-26-11-54-17t-57-6q-67 0-124.5 29T500-413Zm-80 253h-97q-11 0-20.5-5.5T288-181l-78-139h58l40 80h92v-40h-68l-40-80H188l-57-100q-2-5-3.5-10t-1.5-10q0-4 5-20l57-100h104l40-80h68v-40h-92l-40 80h-58l78-139q5-10 14.5-15.5T323-800h97q17 0 28.5 11.5T460-760v160h-60l-40 40h100v120h-88l-40-80h-92l-40 40h108l40 80h112v56q-10 24-15 50t-5 54q0 17 1.5 34t6.5 34q-5 5-12.5 8.5T420-160ZM720-40q-83 0-141.5-58.5T520-240q0-83 58.5-141.5T720-440q83 0 141.5 58.5T920-240q0 83-58.5 141.5T720-40Z" />
                 </svg>
-                    Generate AI Schedule
+                Generate AI Schedule
             </button>
 
             <script>
@@ -37,7 +53,7 @@
                 }
             </script>
 
-           
+
         </div>
     </div>
 
@@ -62,47 +78,47 @@
             {% elif day.is_today %} ring-2 ring-purple-500 bg-purple-50 
             {% elif not day.is_study_period %} bg-gray-100 opacity-60 grayscale
             {% else %} bg-white {% endif %}">
-            
+
             <div class="text-center mb-2">
                 <span class="text-[10px] font-bold {% if day.exam %}text-red-600{% else %}text-gray-400{% endif %}">
                     {{ day.name|slice:":3" }}
                 </span>
                 <div class="text-sm font-bold {% if day.exam %}text-red-700{% endif %}">{{ day.date|date:"d" }}</div>
             </div>
-    
+
             {% if day.exam %}
-                <div class="flex flex-col items-center justify-center py-4">
-                    <span class="text-[16px]">📝</span>
-                    <p class="text-[10px] font-bold text-red-700 text-center uppercase tracking-tighter">
-                        {{ day.exam.subject.name }} EXAM
-                    </p>
-                </div>
+            <div class="flex flex-col items-center justify-center py-4">
+                <span class="text-[16px]">📝</span>
+                <p class="text-[10px] font-bold text-red-700 text-center uppercase tracking-tighter">
+                    {{ day.exam.subject.name }} EXAM
+                </p>
+            </div>
             {% elif day.is_study_period %}
-                
-        
-    
-                {% for session in day.sessions %}
-                    <div class="text-[9px] p-1 mb-1 rounded border-l-2 truncate transition-all
+
+
+
+            {% for session in day.sessions %}
+            <div class="text-[9px] p-1 mb-1 rounded border-l-2 truncate transition-all
                         {% if session.is_completed %}
                             bg-green-50 border-green-500 text-green-700 opacity-80
                         {% else %}
                             bg-purple-100 border-purple-500 text-purple-900
                         {% endif %}">
-                        
-                        {% if session.is_completed %}
-                            <span class="font-bold">✓</span>
-                        {% endif %}
-                        
-                        <span class="{% if session.is_completed %}line-through{% endif %}">
-                            {{ session.start_time|time:"H:i" }} - {{ session.subject.name }}
-                        </span>
-                    </div>
-                {% endfor %}
-    
+
+                {% if session.is_completed %}
+                <span class="font-bold">✓</span>
+                {% endif %}
+
+                <span class="{% if session.is_completed %}line-through{% endif %}">
+                    {{ session.start_time|time:"H:i" }} - {{ session.subject.name }}
+                </span>
+            </div>
+            {% endfor %}
+
             {% else %}
-                <div class="flex items-center justify-center h-16">
-                    <span class="text-[9px] text-gray-400 italic">No Prep</span>
-                </div>
+            <div class="flex items-center justify-center h-16">
+                <span class="text-[9px] text-gray-400 italic">No Prep</span>
+            </div>
             {% endif %}
         </div>
         {% endfor %}
@@ -172,7 +188,6 @@
         {% endif %}
     </div>
 
-    <!-- Study Progress -->
     <div class="bg-white rounded-xl p-6 shadow-sm border">
         <h2 class="text-xl font-bold text-gray-900 mb-4">📈 Weekly Progress</h2>
         <div class="space-y-4">
@@ -183,10 +198,12 @@
                     <span class="text-gray-600">{{ subject.completed_hours }}/{{ subject.planned_hours }}h</span>
                 </div>
                 <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div class="bg-purple-600 h-2 rounded-full transition-all"
+                    <div class="bg-purple-600 h-2 rounded-full transition-all duration-500"
                         style="width: {{ subject.progress_percent }}%"></div>
                 </div>
             </div>
+            {% empty %}
+            <p class="text-gray-400 text-sm italic">No study sessions scheduled for this week.</p>
             {% endfor %}
         </div>
     </div>
@@ -212,7 +229,7 @@
 
 <script>
     function openSession(id) {
-        // Load session details via AJAX
+        // ajax calling
         fetch(`/scheduler/session/${id}/`)
             .then(r => r.json())
             .then(data => {
@@ -247,108 +264,60 @@
     }
 
 
-    // function confirmCompletion(taskId) {
-    //     let url = "{% url 'scheduler:toggle_study_completion' id=12345 %}".replace('12345', taskId);
-
-    //     fetch(url, {
-    //         method: "POST",
-    //         headers: {
-    //             "X-CSRFToken": getCookie('csrftoken'),
-    //             "Content-Type": "application/json",
-    //         },
-    //     })
-    //         .then(response => response.json())
-    //         .then(data => {
-    //             if (data.status === "success") {
-    //                 const btn = document.getElementById(`btn-${taskId}`);
-    //                 const card = document.getElementById(`session-card-${taskId}`);
-    //                 const title = card.querySelector('p.font-medium');
-
-    //                 if (data.is_completed) {
-    //                     // Style the button
-    //                     btn.innerText = "✓ Done";
-    //                     btn.className = "text-xs font-semibold px-4 py-2 rounded-lg border bg-green-600 text-white border-green-700 transition-all";
-
-    //                     // Style the card (Gray out)
-    //                     card.classList.add('bg-gray-50', 'border-gray-300', 'opacity-75');
-    //                     title.classList.add('text-gray-500', 'line-through');
-    //                     title.classList.remove('text-gray-900');
-    //                 } else {
-    //                     // Revert button
-    //                     btn.innerText = "Mark Complete";
-    //                     btn.className = "text-xs font-semibold px-4 py-2 rounded-lg border bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50 transition-all";
-
-    //                     // Revert card (Restore original colors)
-    //                     card.classList.remove('bg-gray-50', 'border-gray-300', 'opacity-75');
-    //                     title.classList.remove('text-gray-500', 'line-through');
-    //                     title.classList.add('text-gray-900');
-    //                 }
-
-    //                 // Update Global Progress (if you have the progress bar in this template)
-    //                 const progressBar = document.getElementById('progress-bar');
-    //                 if (progressBar) {
-    //                     progressBar.style.width = data.progress_percent + "%";
-    //                 }
-    //             }
-    //         })
-    //         .catch(error => console.error("Error:", error));
-    // }
-
     function confirmCompletion(taskId) {
-    let url = "{% url 'scheduler:toggle_study_completion' id=12345 %}".replace('12345', taskId);
+        let url = "{% url 'scheduler:toggle_study_completion' id=12345 %}".replace('12345', taskId);
 
-    fetch(url, {
-        method: "POST",
-        headers: {
-            "X-CSRFToken": getCookie('csrftoken'),
-            "Content-Type": "application/json",
-        },
-    })
-    .then(response => {
-        // NEW: Handle cases where the schedule was stopped/deleted
-        if (response.status === 404) {
-            alert("This task no longer exists. The schedule may have been reset.");
-            const card = document.getElementById(`session-card-${taskId}`);
-            if (card) card.remove(); // Clean up the UI
-            return;
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data && data.status === "success") {
-            const btn = document.getElementById(`btn-${taskId}`);
-            const card = document.getElementById(`session-card-${taskId}`);
-            const title = card.querySelector('p.font-medium');
-
-            if (data.is_completed) {
-                // Done State
-                btn.innerText = "✓ Done";
-                btn.className = "text-xs font-semibold px-4 py-2 rounded-lg border bg-green-600 text-white border-green-700 transition-all";
-                card.classList.add('bg-gray-50', 'border-gray-300', 'opacity-75', 'completed-task');
-                title.classList.add('text-gray-500', 'line-through');
-                if (window.notifiedSessions) {
-                    window.notifiedSessions.add(`schedule-${taskId}`);
+        fetch(url, {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": getCookie('csrftoken'),
+                "Content-Type": "application/json",
+            },
+        })
+            .then(response => {
+                if (response.status === 404) {
+                    alert("This task no longer exists. The schedule may have been reset.");
+                    const card = document.getElementById(`session-card-${taskId}`);
+                    if (card) card.remove(); 
+                    return;
                 }
-            } else {
-                // Active State
-                btn.innerText = "Mark Complete";
-                btn.className = "text-xs font-semibold px-4 py-2 rounded-lg border bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50 transition-all";
-                card.classList.remove('bg-gray-50', 'border-gray-300', 'opacity-75', 'completed-task');
-                title.classList.remove('text-gray-500', 'line-through');
-            }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.status === "success") {
+                    const btn = document.getElementById(`btn-${taskId}`);
+                    const card = document.getElementById(`session-card-${taskId}`);
+                    const title = card.querySelector('p.font-medium');
 
-            // Global Progress Update
-            const progressBar = document.getElementById('progress-bar');
-            if (progressBar) {
-                progressBar.style.width = data.progress_percent + "%";
-                // Optional: Update text label if you have one
-                const progressText = document.getElementById('progress-text');
-                if (progressText) progressText.innerText = data.progress_percent + "%";
-            }
-        }
-    })
-    .catch(error => console.error("Error:", error));
-}
+                    if (data.is_completed) {
+                        // Done State
+                        btn.innerText = "✓ Done";
+                        btn.className = "text-xs font-semibold px-4 py-2 rounded-lg border bg-green-600 text-white border-green-700 transition-all";
+                        card.classList.add('bg-gray-50', 'border-gray-300', 'opacity-75', 'completed-task');
+                        title.classList.add('text-gray-500', 'line-through');
+                        if (window.notifiedSessions) {
+                            window.notifiedSessions.add(`schedule-${taskId}`);
+                        }
+                    } else {
+                        // Active State
+                        btn.innerText = "Mark Complete";
+                        btn.className = "text-xs font-semibold px-4 py-2 rounded-lg border bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50 transition-all";
+                        card.classList.remove('bg-gray-50', 'border-gray-300', 'opacity-75', 'completed-task');
+                        title.classList.remove('text-gray-500', 'line-through');
+                    }
+
+                    // Global Progress Update
+                    const progressBar = document.getElementById('progress-bar');
+                    if (progressBar) {
+                        progressBar.style.width = data.progress_percent + "%";
+
+                        const progressText = document.getElementById('progress-text');
+                        if (progressText) progressText.innerText = data.progress_percent + "%";
+                    }
+                }
+            })
+            .catch(error => console.error("Error:", error));
+    }
     // Helper to get CSRF token from cookies
     function getCookie(name) {
         let cookieValue = null;
@@ -364,17 +333,16 @@
         }
         return cookieValue;
     }
-    function previousWeek() {
-        // We get the current offset from the Django variable passed in the context
-        const currentOffset = parseInt("{{ week_offset }}") || 0;
-        const newOffset = currentOffset - 1;
-        window.location.href = `?week=${newOffset}`;
+    function nextWeek() {
+        const params = new URLSearchParams(window.location.search);
+        let current = parseInt(params.get('week')) || 0;
+        window.location.href = `?week=${current + 1}`;
     }
 
-    function nextWeek() {
-        const currentOffset = parseInt("{{ week_offset }}") || 0;
-        const newOffset = currentOffset + 1;
-        window.location.href = `?week=${newOffset}`;
+    function previousWeek() {
+        const params = new URLSearchParams(window.location.search);
+        let current = parseInt(params.get('week')) || 0;
+        window.location.href = `?week=${current - 1}`;
     }
 </script>
 {% endblock %}

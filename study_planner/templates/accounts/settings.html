@@ -33,7 +33,25 @@
                 </div>
             </div>
         </div>
-
+        <div class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-gray-100">
+            <div class="flex items-center space-x-4 mb-6">
+                <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-2xl">🧠</div>
+                <div>
+                    <h3 class="text-lg font-bold text-gray-800">Learning Preferences</h3>
+                    <p class="text-sm text-gray-400">Personalize how the AI calculates your session lengths</p>
+                </div>
+            </div>
+        
+            <div>
+                <label class="block text-xs font-bold text-gray-400 uppercase mb-2">My Learning Pace</label>
+                <select name="learning_pace" 
+                    class="w-full bg-gray-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-indigo-500 font-medium text-indigo-900 cursor-pointer">
+                    <option value="slow" {% if user.profile.learning_pace == 'slow' %}selected{% endif %}>🐢 Slow (In-depth focus)</option>
+                    <option value="medium" {% if user.profile.learning_pace == 'medium' %}selected{% endif %}>🚶 Medium (Standard balance)</option>
+                    <option value="fast" {% if user.profile.learning_pace == 'fast' %}selected{% endif %}>🚀 Fast (High efficiency)</option>
+                </select>
+            </div>
+        </div>
         <div class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-gray-100">
             <div class="flex items-center space-x-4 mb-8">
                 <div class="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center text-xl">🔔</div>

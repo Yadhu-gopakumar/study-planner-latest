@@ -1,4 +1,3 @@
-from django.contrib import admin
 from django.urls import path, include
 
 from django.conf import settings
@@ -6,8 +5,8 @@ from django.conf.urls.static import static
 
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
 
+    #login
     path("accounts/", include("accounts.urls")),
 
     # Main features
@@ -17,12 +16,10 @@ urlpatterns = [
     path("assistant/", include("assistant.urls")),
 
 
-    # Dashboard & schedule (must NOT be empty path again)
+    # Dashboard & schedule
     path("", include("scheduler.urls")),
 ]
 
-
-# ✅ THIS IS REQUIRED
 if settings.DEBUG:
     urlpatterns += static(
         settings.MEDIA_URL,

@@ -1,18 +1,15 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
-
-
-
 import requests
 import json
 from django.shortcuts import get_object_or_404, redirect, render
 from subjects.models import Chapter
-
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from subjects.models import Subject, Chapter,Question
 from openai import OpenAI
 import os
+
 
 def call_deepseek_api(prompt: str) -> str:
     client = OpenAI(
@@ -37,8 +34,6 @@ def call_deepseek_api(prompt: str) -> str:
     )
 
     return response.choices[0].message.content.strip()
-
-
 
 
 
@@ -83,7 +78,7 @@ def process_ai_view(request, chapter_id):
                 'https://api.ocr.space/parse/image',
                 files={chapter.note_file.path: f},
                 data={
-                    'apikey': 'K82275197288957', # Your key
+                    'apikey': 'K82275197288957', # my api key from ocr.space 
                     'language': 'eng',
                     'isOverlayRequired': False,
                     'isTable': False,
@@ -102,7 +97,7 @@ def process_ai_view(request, chapter_id):
             for res in result.get('ParsedResults'):
                 raw_text += res.get('ParsedText') + "\n"
         else:
-            # This catches specific API errors (like file too large or invalid key)
+            # catches specific API errors (like file too large or invalid key)
             error_message = result.get('ErrorMessage', ['Unknown OCR Error'])[0]
             raise Exception(f"OCR Error: {error_message}")
 
@@ -153,6 +148,7 @@ def process_ai_view(request, chapter_id):
         print(f"Error in OCR View: {e}")
         return render(request, 'error.html', {'message': str(e)})
 
+
 @login_required
 def upload_handwritten_view(request):
     if request.method == "POST":
@@ -165,7 +161,6 @@ def upload_handwritten_view(request):
         # Calculate next chapter number
         next_num = subject.chapters.count() + 1
         
-        # Create the Chapter/Material
         new_chapter = Chapter.objects.create(
             subject=subject,
             chapter_number=next_num,

@@ -1,5 +1,4 @@
-<!-- MATERIALS LIST PAGE -->
-<!-- templates/materials/list.html -->
+
 {% extends 'base.html' %}
 {% block title %}Study Materials{% endblock %}
 {% block content %}
@@ -204,7 +203,6 @@
     }
 
     function showLoader() {
-        // Only show loader if form is valid
         const form = document.getElementById('uploadForm');
         if (form.checkValidity()) {
             document.getElementById('loadingOverlay').classList.remove('hidden');
@@ -213,9 +211,7 @@
     }
 
     function confirmDelete(chapterId) {
-        // A simple browser confirmation for safety
         if (confirm("Are you sure you want to delete this chapter? All AI results and notes will be lost.")) {
-            // Create a hidden form to send a POST request for security
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = `/materials/chapter/${chapterId}/delete/`;

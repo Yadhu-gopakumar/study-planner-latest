@@ -27,7 +27,6 @@
             outline: none;
             box-shadow: 0 0 0 4px rgba(108, 93, 211, 0.1);
         }
-        /* Custom styling for the select dropdown arrow */
         select.input-field {
             appearance: none;
             background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 -960 960 960' fill='%236C5DD3'%3e%3cpath d='M480-345 240-585l56-56 184 184 184-184 56 56-240 240Z'/%3e%3c/svg%3e");
@@ -86,17 +85,20 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Learning Pace</label>
-                        <select name="learning_pace" class="input-field w-full px-5 py-3 rounded-2xl text-gray-700 cursor-pointer">
-                            <option value="slow">Slow</option>
-                            <option value="medium" selected>Medium</option>
-                            <option value="fast">Fast</option>
-                        </select>
+                    <div class="pt-2">
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Learning Preference</label>
+                        <div class="relative">
+                            <select name="learning_pace" class="input-field w-full px-5 py-3 rounded-2xl text-gray-700 cursor-pointer font-medium appearance-none">
+                                <option value="slow">🐢 Slow (Deep focus, more time per topic)</option>
+                                <option value="medium" selected>🚶 Medium (Standard balanced pace)</option>
+                                <option value="fast">🚀 Fast (High efficiency, quick absorption)</option>
+                            </select>
+                            </div>
+                        <p class="text-[10px] text-gray-400 mt-2 ml-1 leading-tight">
+                            * This helps our AI calibrate how long your study sessions should be.
+                        </p>
                     </div>
-                </div>
 
                 <button type="submit" 
                     class="w-full bg-[#6C5DD3] text-white py-4 rounded-2xl font-semibold text-lg hover:bg-[#5b4eb3] transition-all transform hover:-translate-y-1 shadow-lg shadow-indigo-100 mt-4">

@@ -3,10 +3,8 @@
 <style>
     .main-content { padding: 0 !important; }
     
-    /* 1. WHATSAPP-STYLE INDICATOR LOGIC */
     .htmx-indicator { display: none !important; }
 
-    /* Fix: Targeted selector to show dots when the form is processing */
     #chat-form.htmx-request + * #ai-typing, 
     #chat-form.htmx-request ~ * #ai-typing,
     .htmx-request #ai-typing,
@@ -138,8 +136,8 @@
     }
 
     function handleBeforeSend() {
-    // Hide initial state if it exists
-    const initialState = document.getElementById("initial-state");
+
+        const initialState = document.getElementById("initial-state");
     if (initialState) initialState.style.display = "none";
 
     setTimeout(() => {
@@ -164,7 +162,7 @@
         const question = messageInput.value;
         if (!question.trim()) return;
 
-        // 1. Generate the current time (matches h:i A format)
+        // 1. Generate the current time 
         const now = new Date();
         const timeString = now.toLocaleTimeString([], { 
             hour: '2-digit', 

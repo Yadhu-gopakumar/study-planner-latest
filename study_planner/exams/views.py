@@ -1,27 +1,12 @@
 from django.contrib.auth.decorators import login_required
 from .models import Exam,ExamAttempt
-from django.shortcuts import render, redirect,get_object_or_404
-from google import genai
-from subjects.models import Chapter, Question
+from django.shortcuts import render, redirect,get_object_or_404,reverse
 from subjects.question_generator import generate_questions_from_pdf
-from .models import ExamAttempt
 import json
 from django.http import JsonResponse
-
-# API_KEY = "AIzaSyDT1NimstllZmAz-mX56tFC03V4lOZp0OY"
-
-
 import time
-from django.shortcuts import render, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from google import genai
-from subjects.models import Chapter, Question
-from subjects.question_generator import generate_questions_from_pdf
-from django.shortcuts import get_object_or_404, redirect, render,reverse
+from subjects.models import Chapter, Question,Subject
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from subjects.models import Subject
-from .models import ExamAttempt
 
 @login_required
 def start_exam_view(request, subject_id):
@@ -136,7 +121,6 @@ def submit_chapter_quiz(request, chapter_id):
         })
 
 
-# exam/views.py
 @login_required
 def practice_exam_view(request, chapter_id):
     chapter = get_object_or_404(Chapter, id=chapter_id)

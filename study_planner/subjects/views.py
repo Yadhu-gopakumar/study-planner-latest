@@ -18,7 +18,6 @@ from dotenv import load_dotenv
 
 
 
-
 @login_required
 def subjects_list_view(request):
     subjects = Subject.objects.filter(
@@ -161,7 +160,6 @@ def add_chapter_view(request, subject_id):
         title = request.POST.get("title")
         note_file = request.FILES.get("note_file")
 
-        # Create the chapter
         chapter = Chapter.objects.create(
             subject=subject,
             title=title,
@@ -179,13 +177,11 @@ def edit_chapter_view(request, chapter_id):
         chapter.title = request.POST.get("title")
         if request.FILES.get("note_file"):
             chapter.note_file = request.FILES.get("note_file")
-            # Automatically clear AI data if a new note is uploaded
             chapter.summary = ""
             chapter.questions.all().delete()
         chapter.save()
         return redirect('subjects:subject_detail', subject_id=chapter.subject.id)
     
-    # This must match the template path exactly
     return render(request, 'subjects/edit_chapter.html', {'chapter': chapter})
 
 @login_required
@@ -349,6 +345,54 @@ def process_ai_view(request, chapter_id):
 
     return redirect("subjects:chapter-summery", chapter_id=chapter.id)
 
+import os
+import json
+import edge_tts
+import asyncio
+from django.conf import settings
+from django.http import FileResponse, HttpResponse
+from django.shortcuts import get_object_or_404
+
+def chapter_audio_view(request, chapter_id):
+    chapter = get_object_or_404(Chapter, id=chapter_id, subject__user=request.user)
+    
+    if not chapter.summary:
+        return HttpResponse("No summary found", status=404)
+
+    # 1. Define the file path
+    audio_filename = f"chapter_audio_{chapter.id}.mp3"
+    audio_dir = os.path.join(settings.MEDIA_ROOT, "audio_summaries")
+    audio_path = os.path.join(audio_dir, audio_filename)
+
+    # 2. Check if the file already exists
+    if os.path.exists(audio_path):
+        # If it exists, open and return the saved file
+        return FileResponse(open(audio_path, 'rb'), content_type="audio/mpeg")
+
+    # 3. If it doesn't exist, generate it
+    if not os.path.exists(audio_dir):
+        os.makedirs(audio_dir, exist_ok=True)
+
+    data = json.loads(chapter.summary)
+    full_text = f"Chapter Summary. {data.get('summary_paragraph', '')}. "
+    points = data.get("points", {})
+    for section_name, items in points.items():
+        if items:
+            full_text += f" {section_name.replace('_', ' ')}. " + " . ".join(items) + ". "
+
+    async def save_audio():
+        communicate = edge_tts.Communicate(full_text, "en-US-AriaNeural")
+        # Save directly to the path
+        await communicate.save(audio_path)
+
+    try:
+        asyncio.run(save_audio())
+        # Return the newly created file
+        return FileResponse(open(audio_path, 'rb'), content_type="audio/mpeg")
+    except Exception as e:
+        return HttpResponse(f"Error: {str(e)}", status=500)
+
+
 
 def generate_exam_questions_view(request, chapter_id):
     chapter = get_object_or_404(
@@ -470,6 +514,7 @@ CONTENT:
         f"{saved} exam questions generated successfully!"
     )
     return redirect("subjects:chapter-questions", chapter_id=chapter.id)
+
 
 
 @login_required

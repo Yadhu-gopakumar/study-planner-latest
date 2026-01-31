@@ -1,5 +1,145 @@
 {% extends 'base.html' %}
 {% block content %}
+<style>
+    /* ===== Calendar Container ===== */
+    #calendar-container {
+        width: 100%;
+        min-width: 220px;
+        padding: 10px;
+    }
+
+    /* ===== FullCalendar Base ===== */
+    #calendar,
+    .fc,
+    .fc-view-harness,
+    .fc-scrollgrid,
+    .fc-scrollgrid table,
+    .fc-scrollgrid-sync-table,
+    .fc .fc-daygrid-body {
+        width: 100% !important;
+    }
+
+    button[onclick^="nextWeek"],
+    button[onclick^="previousWeek"] {
+        cursor: pointer !important;
+        z-index: 50;
+        position: relative;
+        display: flex;
+        transition: all 0.2s ease;
+    }
+
+    button[onclick^="nextWeek"]:hover,
+    button[onclick^="previousWeek"]:hover {
+        background-color: #f3f4f6 !important;
+        transform: scale(1.1);
+    }
+
+    .fc {
+        font-family: 'Poppins', sans-serif;
+        max-width: 100%;
+    }
+
+    /* ===== Remove Borders ===== */
+    .fc-theme-standard td,
+    .fc-theme-standard th,
+    .fc-scrollgrid {
+        border: none !important;
+    }
+
+    /* ===== Toolbar ===== */
+    .fc-toolbar-title {
+        font-size: 0.9rem !important;
+        font-weight: 700;
+        color: #312E81;
+    }
+
+    /* ===== Navigation Buttons ===== */
+    .fc .fc-button-primary {
+        background-color: #f3f4f6 !important;
+        border: none !important;
+        color: #312E81 !important;
+        border-radius: 8px !important;
+        padding: 4px 8px !important;
+        transition: background-color 0.2s ease;
+    }
+
+    .fc .fc-button-primary:hover {
+        background-color: #e5e7eb !important;
+    }
+
+    /* ===== Column Headers ===== */
+    .fc-col-header-cell-cushion {
+        font-size: 10px;
+        padding: 5px 0 !important;
+        color: #9CA3AF !important;
+    }
+
+    /* ===== Day Cells ===== */
+    .fc-daygrid-day {
+        transition: background-color 0.15s ease;
+    }
+
+    .fc-daygrid-day:hover {
+        background-color: #f9fafb;
+        cursor: pointer;
+    }
+
+    /* Center day number */
+    .fc-daygrid-day-top {
+        justify-content: center !important;
+    }
+
+    /* Day number */
+    .fc-daygrid-day-number {
+        font-size: 11px !important;
+        padding: 8px !important;
+        display: block;
+        text-align: center;
+        width: 100%;
+        font-weight: 500;
+        color: #4B5563;
+    }
+
+    /* ===== Today Highlight ===== */
+    .fc-day-today {
+        background-color: #dde5ff !important;
+        border-radius: 12px;
+    }
+
+    /* ===== Events ===== */
+    .fc-event {
+        border-radius: 50px !important;
+        padding: 3px 10px !important;
+        border: none !important;
+        margin-top: 2px !important;
+        margin-bottom: 2px !important;
+        font-family: 'Poppins', sans-serif;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.377);
+    }
+
+    .fc-daygrid-block-event {
+        border-radius: 50px !important;
+    }
+
+    .fc-event-title {
+        font-size: 11px !important;
+        font-weight: 600 !important;
+        color: white !important;
+    }
+
+    .fc-daygrid-day.fc-day-today {
+        background-color: #f0f4ff !important;
+        border-radius: 10px;
+    }
+
+    .fc-event-main {
+        color: #ffffff !important;
+    }
+
+    .fc-daygrid-event-harness {
+        margin: 0 4px !important;
+    }
+</style>
 <div class="flex flex-col lg:flex-row gap-6 min-h-full">
 
     <div class="flex-grow lg:w-3/4 bg-sky-50/50 -m-10 p-10 rounded-l-[2.5rem]">
@@ -29,8 +169,8 @@
                         <p class="text-gray-400 text-xs mt-1 max-w-xs leading-relaxed">
                             Active study session for {{ item.subject.name }}.
                         </p>
-                        <p class="text-[10px] font-bold text-gray-300 uppercase tracking-widest mt-3">Priority: {{
-                            item.priority }}</p>
+                        <p class="text-[10px] font-bold text-gray-300 uppercase tracking-widest mt-3">Priority:
+                            {{item.priority }}</p>
                     </div>
                 </div>
                 <button
@@ -66,7 +206,7 @@
                         {% for session in study_sessions %}
                         <tr class="border-b">
                             <td class="px-4 py-2 font-mono">
-                                {{ session.start_time|time:"H:i" }} – {{ session.end_time|time:"H:i" }}
+                                {{ session.start_time|time:"g:i a" }} – {{ session.end_time|time:"g:i a" }}
                             </td>
                             <td class="px-4 py-2">{{ session.subject.name }}</td>
                             <td class="px-4 py-2">
@@ -143,8 +283,8 @@
                     <div class="flex items-center space-x-4 mb-6">
                         <div
                             class="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                            {% if "Math" in subject.name %}📐{% elif "Code" in subject.name or "Compute" in subject.name
-                            %}💻{% else %}📚{% endif %}
+                            {% if "Math" in subject.name %}📐{% elif "Code" in subject.name or "Compute" in
+                            subject.name%}💻{% else %}📚{% endif %}
                         </div>
                         <div class="overflow-hidden">
                             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">
@@ -172,7 +312,8 @@
                                 <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Syllabus
                                     Progress</p>
                             </div>
-                            <span class="text-sm font-black text-indigo-600">{{ subject.progress_percent|default:"0"}}%</span>
+                            <span
+                                class="text-sm font-black text-indigo-600">{{subject.progress_percent|default:"0"}}%</span>
                         </div>
 
                         <div class="w-full h-3 bg-gray-100 rounded-full overflow-hidden p-[2px]">
@@ -206,137 +347,7 @@
             </div>
         </div>
 
-        <style>
-            /* ===== Calendar Container ===== */
-            #calendar-container {
-                width: 100%;
-                min-width: 220px;
-                padding: 10px;
-            }
-
-            /* ===== FullCalendar Base ===== */
-            #calendar,
-            .fc,
-            .fc-view-harness,
-            .fc-scrollgrid,
-            .fc-scrollgrid table,
-            .fc-scrollgrid-sync-table,
-            .fc .fc-daygrid-body {
-                width: 100% !important;
-            }
-
-            .fc {
-                font-family: 'Poppins', sans-serif;
-                max-width: 100%;
-            }
-
-            /* ===== Remove Borders (Flat App Look) ===== */
-            .fc-theme-standard td,
-            .fc-theme-standard th,
-            .fc-scrollgrid {
-                border: none !important;
-            }
-
-            /* ===== Toolbar ===== */
-            .fc-toolbar-title {
-                font-size: 0.9rem !important;
-                font-weight: 700;
-                color: #312E81;
-            }
-
-            /* ===== Navigation Buttons ===== */
-            .fc .fc-button-primary {
-                background-color: #f3f4f6 !important;
-                border: none !important;
-                color: #312E81 !important;
-                border-radius: 8px !important;
-                padding: 4px 8px !important;
-                transition: background-color 0.2s ease;
-            }
-
-            .fc .fc-button-primary:hover {
-                background-color: #e5e7eb !important;
-            }
-
-            /* ===== Column Headers ===== */
-            .fc-col-header-cell-cushion {
-                font-size: 10px;
-                padding: 5px 0 !important;
-                color: #9CA3AF !important;
-            }
-
-            /* ===== Day Cells ===== */
-            .fc-daygrid-day {
-                transition: background-color 0.15s ease;
-            }
-
-            .fc-daygrid-day:hover {
-                background-color: #f9fafb;
-                cursor: pointer;
-            }
-
-            /* Center day number */
-            .fc-daygrid-day-top {
-                justify-content: center !important;
-            }
-
-            /* Day number */
-            .fc-daygrid-day-number {
-                font-size: 11px !important;
-                padding: 8px !important;
-                display: block;
-                text-align: center;
-                width: 100%;
-                font-weight: 500;
-                color: #4B5563;
-            }
-
-            /* ===== Today Highlight ===== */
-            .fc-day-today {
-                background-color: #EEF2FF !important;
-                border-radius: 12px;
-            }
-
-            /* ===== Events (Compact Pills) ===== */
-            /* Make all calendar events look like pills */
-            .fc-event {
-                border-radius: 50px !important;
-                /* Forces the capsule shape */
-                padding: 3px 10px !important;
-                border: none !important;
-                margin-top: 2px !important;
-                margin-bottom: 2px !important;
-                font-family: 'Poppins', sans-serif;
-                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            }
-
-            /* Ensure All-Day events (Exams) also follow the styling */
-            .fc-daygrid-block-event {
-                border-radius: 50px !important;
-            }
-
-            /* Adjust the title inside the event */
-            .fc-event-title {
-                font-size: 11px !important;
-                font-weight: 600 !important;
-                color: white !important;
-            }
-
-            /* Style for the day cell to look cleaner */
-            .fc-daygrid-day.fc-day-today {
-                background-color: #f0f4ff !important;
-                border-radius: 10px;
-            }
-
-            .fc-event-main {
-                color: #ffffff !important;
-            }
-
-            /* Prevent calendar height jump */
-            .fc-daygrid-event-harness {
-                margin: 0 4px !important;
-            }
-        </style>
+      
 
 
     </div>
@@ -354,63 +365,66 @@
 
         const ctx = chartElement.getContext('2d');
 
-    const labels = {{ chart_labels| safe}};
-    const studyData = {{ chart_study_data| safe }};
-    const examData = {{ chart_exam_data| safe }};
+        const labels = {{ chart_labels| safe}};
+        const studyData = {{ chart_study_data| safe }};
+        const examData = {{ chart_exam_data| safe }};
 
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Study Hours',
-                data: studyData,
-                borderColor: '#6C5DD3',
-                backgroundColor: 'rgba(108, 93, 211, 0.1)',
-                tension: 0.4,
-                fill: true,
-                yAxisID: 'y',
-            }, {
-                label: 'Exam Avg (%)',
-                data: examData,
-                borderColor: '#10B981',
-                tension: 0.4,
-                yAxisID: 'y1',
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: true, position: 'bottom' }
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Study Hours',
+                    data: studyData,
+                    borderColor: '#6C5DD3',
+                    backgroundColor: 'rgba(108, 93, 211, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    yAxisID: 'y',
+                }, {
+                    label: 'Exam Avg (%)',
+                    data: examData,
+                    borderColor: '#10B981',
+                    tension: 0.4,
+                    yAxisID: 'y1',
+                }]
             },
-            scales: {
-                y: {
-                    type: 'linear',
-                    position: 'left',
-                    beginAtZero: true,
-                    title: { display: true, text: 'Hours' }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true, position: 'bottom' }
                 },
-                y1: {
-                    type: 'linear',
-                    position: 'right',
-                    beginAtZero: true,
-                    max: 100,
-                    title: { display: true, text: 'Score %' },
-                    grid: { drawOnChartArea: false }
+                scales: {
+                    y: {
+                        type: 'linear',
+                        position: 'left',
+                        beginAtZero: true,
+                        title: { display: true, text: 'Hours' }
+                    },
+                    y1: {
+                        type: 'linear',
+                        position: 'right',
+                        beginAtZero: true,
+                        max: 100,
+                        title: { display: true, text: 'Score %' },
+                        grid: { drawOnChartArea: false }
+                    }
                 }
             }
-        }
     });
     }) ();
 </script>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+
         const calendarEl = document.getElementById('calendar');
+
         const calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
-            dayMaxEvents: 2, //Show only 2 events per day.
-            moreLinkClick: 'popover', // Open floating box when clicked
+            dayMaxEvents: 2, 
+            moreLinkClick: 'popover', 
             eventTimeFormat: {
                 hour: 'numeric',
                 minute: '2-digit',
@@ -453,57 +467,54 @@
         calendar.render();
     });
     function confirmCompletion(taskId) {
-    // 1. Correct URL generation
-    let url = "{% url 'scheduler:toggle_study_completion' id=12345 %}".replace('12345', taskId);
-    
-    console.log("Requesting URL:", url);
+        let url = "{% url 'scheduler:toggle_study_completion' id=12345 %}".replace('12345', taskId);
 
-    fetch(url, {
-        method: "POST",
-        headers: {
-            "X-CSRFToken": getCookie('csrftoken'),
-            "Content-Type": "application/json",
-        },
-    })
-    .then(response => {
-        // 2. Check for successful response
-        if (!response.ok) {
-            // Log the text body to see the Django error (HTML)
-            return response.text().then(text => { 
-                throw new Error(`Server responded with ${response.status}: ${text.substring(0, 100)}`); 
-            });
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data && data.status === "success") {
-            const btn = document.getElementById(`btn-${taskId}`);
-            const progressBar = document.getElementById('progress-bar');
-            const progressText = document.getElementById('progress-text');
+        console.log("Requesting URL:", url);
 
-            if (data.is_completed) {
-                btn.innerText = "✓ Done";
-                btn.className = "text-xs font-semibold px-3 py-1.5 rounded-lg border bg-green-500 text-white border-green-600 transition-all";
-                
-                // Stop the alarm for this task immediately
-                if (window.notifiedSessions) {
-                    window.notifiedSessions.add(`schedule-${taskId}`);
+        fetch(url, {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": getCookie('csrftoken'),
+                "Content-Type": "application/json",
+            },
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(`Server responded with ${response.status}: ${text.substring(0, 100)}`);
+                    });
                 }
-            } else {
-                btn.innerText = "Mark Complete";
-                btn.className = "text-xs font-semibold px-3 py-1.5 rounded-lg border bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50 transition-all";
-            }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.status === "success") {
+                    const btn = document.getElementById(`btn-${taskId}`);
+                    const progressBar = document.getElementById('progress-bar');
+                    const progressText = document.getElementById('progress-text');
 
-            if (progressBar) {
-                progressBar.style.width = data.progress_percent + "%";
-                if (progressText) progressText.innerText = data.progress_percent + "%";
-            }
-        }
-    })
-    .catch(error => {
-        console.error("Task Update Failed:", error);
-    });
-}
+                    if (data.is_completed) {
+                        btn.innerText = "✓ Done";
+                        btn.className = "text-xs font-semibold px-3 py-1.5 rounded-lg border bg-green-500 text-white border-green-600 transition-all";
+
+                        // Stop the alarm for this task immediately
+                        if (window.notifiedSessions) {
+                            window.notifiedSessions.add(`schedule-${taskId}`);
+                        }
+                    } else {
+                        btn.innerText = "Mark Complete";
+                        btn.className = "text-xs font-semibold px-3 py-1.5 rounded-lg border bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50 transition-all";
+                    }
+
+                    if (progressBar) {
+                        progressBar.style.width = data.progress_percent + "%";
+                        if (progressText) progressText.innerText = data.progress_percent + "%";
+                    }
+                }
+            })
+            .catch(error => {
+                console.error("Task Update Failed:", error);
+            });
+    }
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {

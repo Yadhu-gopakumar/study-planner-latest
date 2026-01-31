@@ -14,7 +14,7 @@ import json
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime, timedelta, time,date
-
+from django.http import HttpResponse
 
 MODEL_PATH = os.path.join(
     settings.BASE_DIR,
@@ -84,8 +84,6 @@ def dashboard_view(request):
         else:
             subject.progress_percent = 0
             
-        # DEBUG: Check your terminal to see if these numbers are > 0
-        print(f"Subject: {subject.name} | Hours: {subject.total_hours} | Score: {subject.avg_performance}%")
 
     # 3. GLOBAL STATS
     total_mins = StudyLog.objects.filter(user=user).aggregate(total=Sum('duration_minutes'))['total'] or 0
@@ -109,17 +107,17 @@ def dashboard_view(request):
     context = {
                 "progress_percent": progress_percent,
                 "overall_avg": overall_avg,
-         "today": today,
-        "timetable_entries": timetable_entries,
-        "study_sessions": study_sessions,
-        "subjects": subjects,
-        "study_hours": study_hours,
-        "overall_avg": overall_avg,
-        "chart_labels": json.dumps(last_7_days),
-        "chart_study_data": json.dumps(study_data),
-        "chart_exam_data": json.dumps(exam_data),
-        "mastered_count": ChapterProgress.objects.filter(user=user, is_mastered=True).count(),
-    }
+                "today": today,
+                "timetable_entries": timetable_entries,
+                "study_sessions": study_sessions,
+                "subjects": subjects,
+                "study_hours": study_hours,
+                "overall_avg": overall_avg,
+                "chart_labels": json.dumps(last_7_days),
+                "chart_study_data": json.dumps(study_data),
+                "chart_exam_data": json.dumps(exam_data),
+                "mastered_count": ChapterProgress.objects.filter(user=user, is_mastered=True).count(),
+        }
 
     return render(request, "dashboard.html", context)
 
@@ -130,7 +128,7 @@ def schedule_view(request):
     except (ValueError, TypeError):
         week_offset = 0
 
-    today = timezone.localtime().date()   # ✅ IST date  
+    today = timezone.localtime().date()   
     week_start = (today - timedelta(days=today.weekday())) + timedelta(weeks=week_offset)
     week_end = week_start + timedelta(days=6)
 
@@ -156,7 +154,7 @@ def schedule_view(request):
 
     routine_entries = TimetableEntry.objects.filter(user=request.user)
     
-    # Optional: Get the exams happening this week to show them on the grid
+    # Get the exams happening this week to show them on the grid
     exams_this_week = Exam_time_table.objects.filter(
         user=request.user,
         exam_date__range=(week_start, week_end)
@@ -167,7 +165,6 @@ def schedule_view(request):
         day_date = week_start + timedelta(days=i)
         day_name = day_date.strftime("%a").upper()[:3]
 
-        # ✅ LOGIC: Is this a "Study Day" or an "Exam Day"?
         is_study_period = plan_start <= day_date <= study_period_end
         exam_on_this_day = exams_this_week.filter(exam_date=day_date).first()
 
@@ -180,6 +177,44 @@ def schedule_view(request):
             "sessions": ai_schedules.filter(date=day_date).order_by("start_time"),
             "routine": routine_entries.filter(day=day_name) if is_study_period else []
         })
+    # --- Calculate Weekly Progress ---
+    subjects_progress = []
+    # Get all unique subjects that have sessions scheduled for this specific week
+    scheduled_subjects = Subject.objects.filter(
+        studyschedule__user=request.user,
+        studyschedule__date__range=(week_start, week_end)
+    ).distinct()
+
+    for subj in scheduled_subjects:
+        # Get all sessions for this subject this week
+        week_sessions = ai_schedules.filter(subject=subj)
+        
+        # Calculate total planned minutes
+        planned_mins = 0
+        completed_mins = 0
+        
+        for s in week_sessions:
+            # Calculate duration of the session
+            start_dt = datetime.combine(date.min, s.start_time)
+            end_dt = datetime.combine(date.min, s.end_time)
+            duration = (end_dt - start_dt).seconds / 60
+            
+            planned_mins += duration
+            if s.is_completed:
+                completed_mins += duration
+
+        # Convert to hours for the UI
+        planned_h = round(planned_mins / 60, 1)
+        completed_h = round(completed_mins / 60, 1)
+        
+        # Calculate percent
+        percent = int((completed_mins / planned_mins * 100)) if planned_mins > 0 else 0
+        subjects_progress.append({
+            "name": subj.name,
+            "planned_hours": planned_h,
+            "completed_hours": completed_h,
+            "progress_percent": percent
+        })
 
     return render(request, "scheduler/schedule.html", {
         "current_week_start": week_start,
@@ -187,14 +222,15 @@ def schedule_view(request):
         "week_days": week_days,
         "week_offset": week_offset,
         "today_sessions": ai_schedules.filter(date=today).order_by("start_time"),
+        "subjects_progress": subjects_progress,
     })
+
 
 @login_required
 def generate_schedule_form(request):
     subjects = Subject.objects.filter(user=request.user)
 
     if request.method == "POST":
-        # handle later in generate_schedule_create
         return redirect("scheduler:generate_schedule_create")
 
     return render(
@@ -204,39 +240,63 @@ def generate_schedule_form(request):
     )
 
 
-def normalize_time(plans, daily_hours, break_minutes=15):
+def normalize_time(plans, daily_hours, user, break_minutes=15):
     """
-    Takes the ML-predicted time_alloc (proportions) and fits them 
-    into the user's actual available daily window.
+    Fits proportions into the daily window, adjusted for user learning pace.
     """
     total_minutes = daily_hours * 60
     num_breaks = max(0, len(plans) - 1)
     breaks = num_breaks * break_minutes
     available = total_minutes - breaks
 
-    # Sum up predicted hours to get the total proportional weight
-    raw_sum = sum(p["time_alloc"] for p in plans)
+    # 1. Determine Learning Pace Multiplier
+    # Default to medium (1.0) if profile doesn't exist
+    pace_multiplier = 1.0
+    try:
+        pace = user.profile.learning_pace
+        if pace == 'slow':
+            pace_multiplier = 1.3  # Boost time needed
+        elif pace == 'fast':
+            pace_multiplier = 0.8  # Needs less time, more efficient
+    except AttributeError:
+        pass
+
+    # 2. Calculate adjusted weights
+    for p in plans:
+        # Start with the base AI allocation
+        weight = p["time_alloc"]
+        
+        # Apply Difficulty Boost (3 = Hard)
+        if p["subject"].difficulty == 3:
+            weight *= 1.5
+            
+        # Apply Personalized Learning Pace
+        # multiply the weight by the pace_multiplier
+        p["adjusted_weight"] = weight * pace_multiplier
+
+    # 3. Sum up the new weights
+    total_weight = sum(p["adjusted_weight"] for p in plans)
     
-    # Safeguard against zero predictions
-    if raw_sum <= 0:
+    if total_weight <= 0:
         for p in plans:
             p["minutes"] = available // len(plans) if plans else 0
         return plans
 
+    # 4. Final Allocation
     for p in plans:
-        if p["subject"].difficulty == 3:
-            p["time_alloc"] *= 1.5  # boost for Hard subjects
-        calculated_minutes = int((p["time_alloc"] / raw_sum) * available)
+        calculated_minutes = int((p["adjusted_weight"] / total_weight) * available)
         
-        # Ensure a minimum study block of 30 minutes 
+        # 30-minute floor to ensure meaningful study added by myself
         p["minutes"] = max(30, calculated_minutes)
 
     return plans
+
 
 def round_time_to_5(dt):
     """Rounds a datetime object down to the nearest 5-minute mark."""
     minute = (dt.minute // 5) * 5
     return dt.replace(minute=minute, second=0, microsecond=0)
+
 def ml_allocate_time(subjects, daily_hours):
     model = get_study_model()
     plans = []
@@ -282,9 +342,9 @@ def generate_schedule_create(request):
     daily_hours = int(request.POST.get("hours_per_day", 4))
     start_h, start_m = map(int, request.POST.get("start_time", "18:00").split(":"))
 
-    # 1. Clear future data only
     StudySchedule.objects.filter(user=request.user, date__gte=today).delete()
     TimetableEntry.objects.filter(user=request.user).delete()
+    Exam_time_table.objects.filter(user=request.user).delete()
 
     selected = []
     for key in request.POST:
@@ -336,11 +396,10 @@ def generate_schedule_create(request):
             s["days_left"] = max(1, (s["exam_date"] - loop_date).days)
 
         plans = ml_allocate_time(selected, daily_hours)
-        plans = normalize_time(plans, daily_hours)
+        plans = normalize_time(plans, daily_hours,request.user)
 
         current_dt = datetime.combine(loop_date, time(start_h, start_m))
 
-       
         # Create entries for the subjects allocated for this day
         for i, p in enumerate(plans):
             if p["minutes"] <= 0: continue
@@ -433,7 +492,6 @@ def timetable_list(request):
 def get_schedule_events(request):
     events = []
     
-    # Get today's date based on server time
     now = timezone.localtime()
     today = now.date()
 
@@ -445,13 +503,13 @@ def get_schedule_events(request):
         end_dt = f"{s.date.isoformat()}T{s.end_time.strftime('%H:%M:%S')}"
         
         events.append({
-            "id": f"schedule-{s.id}",  # ADD THIS: Unique ID for the JS Set
+            "id": f"schedule-{s.id}",  # Unique ID for the JS Set
             "title": f"📘 {s.subject.name}",
             "start": start_dt,
             "end": end_dt,
             "backgroundColor": "#6366F1",
             "borderColor": "transparent",
-            "is_completed": s.is_completed,  # <-- ADD THIS LINE
+            "is_completed": s.is_completed, 
             "extendedProps": {
                 "description": f"Task {s.task_type}<br><b>Priority:</b> {s.priority}"
             }
@@ -520,14 +578,11 @@ def save_study_log(request):
         return JsonResponse({"status": "success"})
 
 
-# scheduler/views.py
-from django.http import HttpResponse
-from django.utils import timezone
-from .models import StudySchedule
+
 
 @login_required
 def stop_schedule(request):
-    # We use DELETE method to match hx-delete
+    # DELETE method to match hx-delete
     if request.method == "DELETE":
         today = timezone.localtime().date()
         StudySchedule.objects.filter(user=request.user, date=today).delete()

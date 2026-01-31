@@ -30,7 +30,6 @@
             height: 100vh;
             display: flex;
             overflow: hidden;
-            /* box-shadow: 0 40px 100px -20px rgba(108, 93, 211, 0.15); */
         }
 
         /* Sidebar Styling */
@@ -63,10 +62,8 @@
             background: rgba(181, 253, 255, 0.15);
             border-left: 4px solid white;
             pointer-events: none;
-            /* Disables all mouse interactions */
         }
 
-        /* Content Area */
         .main-content {
             flex-grow: 1;
             padding: 40px 30px;
@@ -80,7 +77,6 @@
 
         }
 
-        /* Landing Card for Guest */
         .auth-card {
             background: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(20px);
@@ -172,7 +168,7 @@
 
             <main class="main-content ">
                 <div id="study-popup"
-                    class=" fixed top-0 right-6 z-[9999] w-85 bg-white/95 backdrop-blur-sm border-b-4 border-indigo-600 shadow-[0_20px_50px_rgba(0,0,0,0.2)] rounded-2xl overflow-hidden transform transition-all duration-500 ease-out translate-y-32 opacity-0">
+                    class="hidden fixed top-0 right-6 z-[9999] w-85 bg-white/95 backdrop-blur-sm border-b-4 border-indigo-600 shadow-[0_20px_50px_rgba(0,0,0,0.2)] rounded-2xl overflow-hidden transform transition-all duration-500 ease-out translate-y-32 opacity-0">
 
                     <div id="popup-progress"
                         class="absolute top-0 left-0 h-1 bg-indigo-600 transition-all duration-[8000ms] linear"
@@ -275,136 +271,104 @@
     </div>
     {% endif %}
 
-
     <script>
-        // 1. GLOBAL STATE (Prevents redeclaration errors on HTMX swaps)
-        if (!window.notifiedSessions) {
-            window.notifiedSessions = new Set();
-        }
-
-        // 2. HTMX HELPERS
-        // Unified CSRF listener (removed the duplicate you had)
-        document.body.addEventListener('htmx:configRequest', (event) => {
-            event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
-        });
-
-        // Auto-process new HTMX elements (like buttons) added via JS or Partial Swaps
-        function initHtmxButtons() {
-            const btn = document.getElementById('stop-schedule-btn');
-            if (btn && typeof htmx !== 'undefined') {
-                htmx.process(btn);
-            }
-        }
-        document.addEventListener('DOMContentLoaded', initHtmxButtons);
-        document.addEventListener('htmx:afterSwap', initHtmxButtons);
-
-        // 3. THE REMINDER LOGIC
+        // This looks for a list of task IDs that the user already dismissed
+        const getDismissed = () => JSON.parse(localStorage.getItem('dismissedTasks') || '{}');
+        const saveDismiss = (id) => {
+            const dismissed = getDismissed();
+            dismissed[id] = Date.now(); // Save ID with a timestamp
+            localStorage.setItem('dismissedTasks', JSON.stringify(dismissed));
+        };
+    
+        // 2. THE REMINDER LOGIC 
         function checkUpcomingTasks() {
             fetch('/api/get-schedule-events/')
                 .then(response => response.json())
                 .then(events => {
                     const now = new Date();
+                    const dismissed = getDismissed();
+    
                     events.forEach(event => {
-                        // Ignore finished or all-day events
                         if (event.is_completed || event.allDay) return;
-
+    
                         const startTime = new Date(event.start);
                         const timeDiff = startTime - now;
                         const minutesDiff = Math.floor(timeDiff / 60000);
-
-                        // Check if event is starting within the next 10 minutes
+                        const taskId = String(event.id);
+    
                         const isUpcoming = minutesDiff >= 0 && minutesDiff <= 10;
-
-                        if (isUpcoming && !window.notifiedSessions.has(event.id)) {
-                            showNotification(event.title, `Starts in ${minutesDiff} minutes!`);
-                            window.notifiedSessions.add(event.id);
-
-                            // Clear from memory after 15 mins to allow for schedule resets
-                            setTimeout(() => window.notifiedSessions.delete(event.id), 15 * 60000);
+    
+                        // CHECK: Is it upcoming AND not already dismissed in the last 30 mins?
+                        const wasRecentlyDismissed = dismissed[taskId] && (Date.now() - dismissed[taskId] < 30 * 60000);
+    
+                        if (isUpcoming && !wasRecentlyDismissed) {
+                            showNotification(event.title, `Starts in ${minutesDiff} minutes!`, taskId);
                         }
                     });
                 })
                 .catch(err => console.error("Schedule API Fetch Error:", err));
         }
-
-        // 4. THE POPUP UI logic
-        function showNotification(title, message) {
+    
+        // 3. THE POPUP UI 
+        function showNotification(title, message, taskId) {
             const popup = document.getElementById('study-popup');
             const progress = document.getElementById('popup-progress');
-            if (!popup || !progress) return; // Guard against missing elements
-
+            if (!popup || !progress) return;
+    
+            // Reset display from any previous 'none'
+            popup.style.display = 'flex';
+            popup.classList.remove('hidden', 'translate-y-32', 'opacity-0', 'pointer-events-none');
+            popup.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
+    
             document.getElementById('popup-title').innerText = title;
             document.getElementById('popup-message').innerText = message;
-
-            // Reset progress and visibility
+            
+            // Pass the taskId to the Dismiss button dynamically
+            const dismissBtn = popup.querySelector('button[onclick*="closePopup"]');
+            dismissBtn.setAttribute('onclick', `dismissTask('${taskId}')`);
+    
             progress.style.transition = 'none';
             progress.style.width = '100%';
-            popup.classList.remove('hidden');
-
-            // Trigger animation frame
             requestAnimationFrame(() => {
-                popup.classList.remove('translate-y-32', 'opacity-0');
-                popup.classList.add('translate-y-0', 'opacity-100');
-
-                // Start progress bar shrink (8 seconds)
                 progress.style.transition = 'width 8000ms linear';
                 progress.style.width = '0%';
             });
-
-            // Sound (plays after user clicks anywhere on the site)
-            // Stop any previous sound
+    
+            // Alarm Sound
             if (window.popupAudio) {
                 window.popupAudio.pause();
-                window.popupAudio.currentTime = 0;
             }
-
-            // Create & play new sound
             window.popupAudio = new Audio('/static/audio/alarm.wav');
-            window.popupAudio.play().catch(() =>
-                console.log("Sound muted: Waiting for user interaction.")
-            );
-
-            // Auto close
+            window.popupAudio.play().catch(() => console.log("User interaction required for sound"));
+    
             if (window.popupTimer) clearTimeout(window.popupTimer);
-            window.popupTimer = setTimeout(closePopup, 8000);
-
-            if (window.popupTimeout) clearTimeout(window.popupTimeout);
-            window.popupTimeout = setTimeout(closePopup, 8000);
+            window.popupTimer = setTimeout(() => dismissTask(taskId), 8000);
         }
-
+    
+        // function to handle the dismissal 
+        function dismissTask(taskId) {
+            saveDismiss(taskId); 
+            closePopup();
+        }
+    
         function closePopup() {
             const popup = document.getElementById('study-popup');
-            const progress = document.getElementById('popup-progress');
-
-            // Stop sound immediately
+            if (!popup) return;
+    
             if (window.popupAudio) {
                 window.popupAudio.pause();
                 window.popupAudio.currentTime = 0;
-                window.popupAudio = null;
             }
-
-            // Stop auto timer
-            if (window.popupTimer) {
-                clearTimeout(window.popupTimer);
-                window.popupTimer = null;
-            }
-
-            // Reset progress bar
-            progress.style.transition = 'none';
-            progress.style.width = '100%';
-
-            // Animate out
+    
             popup.classList.remove('translate-y-0', 'opacity-100');
-            popup.classList.add('translate-y-32', 'opacity-0');
-
-            // Fully hide
+            popup.classList.add('translate-y-32', 'opacity-0', 'pointer-events-none');
+    
             setTimeout(() => {
                 popup.style.display = 'none';
             }, 500);
         }
-
-
-        // 5. SINGLE INTERVAL GUARD
+    
+        // 4. INTERVAL GUARD
         if (!window.taskCheckInterval) {
             checkUpcomingTasks();
             window.taskCheckInterval = setInterval(checkUpcomingTasks, 60000);

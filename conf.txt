@@ -1,0 +1,60 @@
+ēCoursie – AI Study Planner
+
+ēCoursie is an AI-powered study companion built with Django, HTMX, and Tailwind CSS.
+It helps students manage subjects, generate AI-powered summaries with text-to-speech,
+and create adaptive study schedules based on individual learning pace.
+
+Getting Started
+
+This project has been factory reset (database and migrations cleared).
+Follow the steps below to set up the project from scratch.
+
+Prerequisites
+- Python 3.10 or higher
+- Stable internet connection
+
+
+1. Create a Virtual Environment
+go to project folder (eg: study-planner-main)
+
+Windows:
+python -m venv venv
+venv\Scripts\activate
+
+Linux / macOS:
+python3 -m venv venv
+source venv/bin/activate
+
+2. Install Dependencies
+pip install -r requirements.txt
+
+
+3. Initialize the Database
+
+move to project folder ( eg: >> cd study_planner ),then use thise commands
+
+python manage.py makemigrations
+python manage.py migrate
+python manage.py createsuperuser
+
+4. Run the Project
+python manage.py runserver
+
+5. Open in browser:
+http://127.0.0.1:8000
+
+Core Features
+- Adaptive study scheduling based on learning pace (Slow, Medium, Fast)
+- AI-generated chapter summaries with audio using edge-tts
+- Dynamic UI using HTMX without full page reloads
+- Smart browser reminders using localStorage
+
+Project Structure
+accounts   : Custom user model and student profiles
+scheduler  : Study planner and timetable logic
+media      : Generated audio files
+static     : Tailwind CSS and custom JavaScript
+
+Important Notes
+- Internet connection is required for AI and text-to-speech features
+- Browser audio may not play until the page is interacted with at least once

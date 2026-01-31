@@ -69,7 +69,7 @@ class Chapter(models.Model):
     def is_pdf(self):
         return self.note_file and self.note_file.name.lower().endswith(".pdf")
     def save(self, *args, **kwargs):
-        # 🔑 Auto-increment chapter number PER SUBJECT
+        # Auto-increment chapter number PER SUBJECT
         if not self.chapter_number:
             last_number = (
                 Chapter.objects
@@ -82,7 +82,7 @@ class Chapter(models.Model):
         super().save(*args, **kwargs)
 
     class Meta:
-        unique_together = ('subject', 'chapter_number') # Prevents duplicate chapter numbers
+        unique_together = ('subject', 'chapter_number') 
         ordering = ["chapter_number"]
 
 class Question(models.Model):
