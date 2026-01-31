@@ -8,7 +8,8 @@ from .views import (
     generate_schedule_form,
     generate_schedule_create,
     toggle_study_completion,
-    save_study_log
+    save_study_log,
+    stop_schedule
 )
 
 app_name="scheduler"
@@ -33,5 +34,6 @@ urlpatterns = [
     path("timetable/", timetable_list, name="timetable_list"),
     path("complete/<int:id>/",toggle_study_completion,name="toggle_study_completion"),
     path('save-study-log/', save_study_log, name='save_study_log'),
+    path('stop-schedule/', stop_schedule, name='stop_schedule'),
 ]
 

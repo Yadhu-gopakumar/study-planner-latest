@@ -2,6 +2,17 @@
 {% extends 'base.html' %}
 {% block title %}Study Schedule{% endblock %}
 {% block content %}
+<style>
+    /* Add to your <style> block */
+.completed-task {
+    pointer-events: none; /* Optional: prevent further clicks until unmasked */
+    transition: all 0.4s ease;
+}
+
+.completed-task button {
+    pointer-events: auto; /* Allow the button to be clicked to 'undo' completion */
+}
+</style>
 <div class="space-y-6">
     <!-- Header -->
     <div class="flex justify-between items-center">
@@ -236,52 +247,108 @@
     }
 
 
+    // function confirmCompletion(taskId) {
+    //     let url = "{% url 'scheduler:toggle_study_completion' id=12345 %}".replace('12345', taskId);
+
+    //     fetch(url, {
+    //         method: "POST",
+    //         headers: {
+    //             "X-CSRFToken": getCookie('csrftoken'),
+    //             "Content-Type": "application/json",
+    //         },
+    //     })
+    //         .then(response => response.json())
+    //         .then(data => {
+    //             if (data.status === "success") {
+    //                 const btn = document.getElementById(`btn-${taskId}`);
+    //                 const card = document.getElementById(`session-card-${taskId}`);
+    //                 const title = card.querySelector('p.font-medium');
+
+    //                 if (data.is_completed) {
+    //                     // Style the button
+    //                     btn.innerText = "✓ Done";
+    //                     btn.className = "text-xs font-semibold px-4 py-2 rounded-lg border bg-green-600 text-white border-green-700 transition-all";
+
+    //                     // Style the card (Gray out)
+    //                     card.classList.add('bg-gray-50', 'border-gray-300', 'opacity-75');
+    //                     title.classList.add('text-gray-500', 'line-through');
+    //                     title.classList.remove('text-gray-900');
+    //                 } else {
+    //                     // Revert button
+    //                     btn.innerText = "Mark Complete";
+    //                     btn.className = "text-xs font-semibold px-4 py-2 rounded-lg border bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50 transition-all";
+
+    //                     // Revert card (Restore original colors)
+    //                     card.classList.remove('bg-gray-50', 'border-gray-300', 'opacity-75');
+    //                     title.classList.remove('text-gray-500', 'line-through');
+    //                     title.classList.add('text-gray-900');
+    //                 }
+
+    //                 // Update Global Progress (if you have the progress bar in this template)
+    //                 const progressBar = document.getElementById('progress-bar');
+    //                 if (progressBar) {
+    //                     progressBar.style.width = data.progress_percent + "%";
+    //                 }
+    //             }
+    //         })
+    //         .catch(error => console.error("Error:", error));
+    // }
+
     function confirmCompletion(taskId) {
-        let url = "{% url 'scheduler:toggle_study_completion' id=12345 %}".replace('12345', taskId);
+    let url = "{% url 'scheduler:toggle_study_completion' id=12345 %}".replace('12345', taskId);
 
-        fetch(url, {
-            method: "POST",
-            headers: {
-                "X-CSRFToken": getCookie('csrftoken'),
-                "Content-Type": "application/json",
-            },
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === "success") {
-                    const btn = document.getElementById(`btn-${taskId}`);
-                    const card = document.getElementById(`session-card-${taskId}`);
-                    const title = card.querySelector('p.font-medium');
+    fetch(url, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": getCookie('csrftoken'),
+            "Content-Type": "application/json",
+        },
+    })
+    .then(response => {
+        // NEW: Handle cases where the schedule was stopped/deleted
+        if (response.status === 404) {
+            alert("This task no longer exists. The schedule may have been reset.");
+            const card = document.getElementById(`session-card-${taskId}`);
+            if (card) card.remove(); // Clean up the UI
+            return;
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data && data.status === "success") {
+            const btn = document.getElementById(`btn-${taskId}`);
+            const card = document.getElementById(`session-card-${taskId}`);
+            const title = card.querySelector('p.font-medium');
 
-                    if (data.is_completed) {
-                        // Style the button
-                        btn.innerText = "✓ Done";
-                        btn.className = "text-xs font-semibold px-4 py-2 rounded-lg border bg-green-600 text-white border-green-700 transition-all";
-
-                        // Style the card (Gray out)
-                        card.classList.add('bg-gray-50', 'border-gray-300', 'opacity-75');
-                        title.classList.add('text-gray-500', 'line-through');
-                        title.classList.remove('text-gray-900');
-                    } else {
-                        // Revert button
-                        btn.innerText = "Mark Complete";
-                        btn.className = "text-xs font-semibold px-4 py-2 rounded-lg border bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50 transition-all";
-
-                        // Revert card (Restore original colors)
-                        card.classList.remove('bg-gray-50', 'border-gray-300', 'opacity-75');
-                        title.classList.remove('text-gray-500', 'line-through');
-                        title.classList.add('text-gray-900');
-                    }
-
-                    // Update Global Progress (if you have the progress bar in this template)
-                    const progressBar = document.getElementById('progress-bar');
-                    if (progressBar) {
-                        progressBar.style.width = data.progress_percent + "%";
-                    }
+            if (data.is_completed) {
+                // Done State
+                btn.innerText = "✓ Done";
+                btn.className = "text-xs font-semibold px-4 py-2 rounded-lg border bg-green-600 text-white border-green-700 transition-all";
+                card.classList.add('bg-gray-50', 'border-gray-300', 'opacity-75', 'completed-task');
+                title.classList.add('text-gray-500', 'line-through');
+                if (window.notifiedSessions) {
+                    window.notifiedSessions.add(`schedule-${taskId}`);
                 }
-            })
-            .catch(error => console.error("Error:", error));
-    }
+            } else {
+                // Active State
+                btn.innerText = "Mark Complete";
+                btn.className = "text-xs font-semibold px-4 py-2 rounded-lg border bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50 transition-all";
+                card.classList.remove('bg-gray-50', 'border-gray-300', 'opacity-75', 'completed-task');
+                title.classList.remove('text-gray-500', 'line-through');
+            }
+
+            // Global Progress Update
+            const progressBar = document.getElementById('progress-bar');
+            if (progressBar) {
+                progressBar.style.width = data.progress_percent + "%";
+                // Optional: Update text label if you have one
+                const progressText = document.getElementById('progress-text');
+                if (progressText) progressText.innerText = data.progress_percent + "%";
+            }
+        }
+    })
+    .catch(error => console.error("Error:", error));
+}
     // Helper to get CSRF token from cookies
     function getCookie(name) {
         let cookieValue = null;

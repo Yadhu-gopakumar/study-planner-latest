@@ -76,47 +76,110 @@ def chat_view(request):
         "history": history,
     })
 
+# @login_required
+# def chat_htmx(request):
+#     question = request.POST.get("question")
+#     subject_id = request.POST.get("subject_id")
+
+#     if not subject_id:
+#         # Return a small snippet if no subject selected
+#         return HttpResponse("<div class='text-red-500 p-2'>Please select a subject first.</div>")
+
+#     try:
+#         subject = Subject.objects.get(id=subject_id, user=request.user)
+        
+#         # 1. Get or Create a Session for this user and subject
+#         session, created = ChatSession.objects.get_or_create(
+#             user=request.user, 
+#             subject=subject
+#         )
+
+#         # 2. Get the context from chapters
+#         context = get_subject_context(subject)
+
+#         # 3. Get AI Response
+#         reply = deepseek_chat(question, context)
+
+#         # 4. Save User Message
+#         ChatMessage.objects.create(
+#             session=session,
+#             role="user",
+#             content=question
+#         )
+
+#         # 5. Save AI Message
+#         ChatMessage.objects.create(
+#             session=session,
+#             role="ai",
+#             content=reply
+#         )
+
+#         return render(request, "assistant/partials/ai_message.html", {
+#             "reply": reply,
+#             "question": question
+#         })
+        
+#     except Subject.DoesNotExist:
+#         return HttpResponse("Subject not found.", status=404)
+
+def check_for_greetings(question, user):
+    """
+    Returns a custom greeting string if the question is a basic greeting.
+    """
+    # Cleaned list (removed double comma and added common variations)
+    greetings = {
+        'hi', 'hy', 'hello', 'hey', 'greetings', 'sup',
+        'good morning', 'good afternoon', 'good evening', 'good night'
+    }
+    
+    # 1. Normalize: lowercase, strip extra whitespace, and remove punctuation
+    clean_q = question.lower().strip().rstrip('?!.')
+    
+    # 2. Check if the question is strictly one of the greetings
+    if clean_q in greetings:
+        # Use the user's name if available, otherwise 'there'
+        name = user.first_name if user.first_name else "there"
+        
+        # Personalized response based on time (optional)
+        if 'morning' in clean_q:
+            return f"Good morning, {name}! Ready to tackle your syllabus today?"
+        elif 'night' in clean_q:
+            return f"Good night, {name}! Sleep well, I'll be here when you're back to study."
+        
+        return f"Hello, {name}! I'm your AI tutor. Ask me anything about your current subject!"
+    
+    return None
+
 @login_required
 def chat_htmx(request):
     question = request.POST.get("question")
     subject_id = request.POST.get("subject_id")
 
     if not subject_id:
-        # Return a small snippet if no subject selected
         return HttpResponse("<div class='text-red-500 p-2'>Please select a subject first.</div>")
 
     try:
         subject = Subject.objects.get(id=subject_id, user=request.user)
+        session, _ = ChatSession.objects.get_or_create(user=request.user, subject=subject)
+
+        # --- GREETING INTERCEPTOR START ---
+        reply = check_for_greetings(question, request.user)
         
-        # 1. Get or Create a Session for this user and subject
-        session, created = ChatSession.objects.get_or_create(
-            user=request.user, 
-            subject=subject
-        )
+        if not reply:
+            # If it's not a greeting, proceed to the AI
+            context = get_subject_context(subject)
+            reply = deepseek_chat(question, context)
+        # --- GREETING INTERCEPTOR END ---
 
-        # 2. Get the context from chapters
-        context = get_subject_context(subject)
-
-        # 3. Get AI Response
-        reply = deepseek_chat(question, context)
-
-        # 4. Save User Message
-        ChatMessage.objects.create(
-            session=session,
-            role="user",
-            content=question
-        )
-
-        # 5. Save AI Message
-        ChatMessage.objects.create(
-            session=session,
-            role="ai",
-            content=reply
-        )
+        # Save User Message
+        ChatMessage.objects.create(session=session, role="user", content=question)
+        # Save AI Message
+        msg_obj = ChatMessage.objects.create(session=session, role="ai", content=reply)
 
         return render(request, "assistant/partials/ai_message.html", {
             "reply": reply,
-            "question": question
+            "question": question,
+            "message": msg_obj  # Passing the object ensures the timestamp works!
         })
         
     except Subject.DoesNotExist:

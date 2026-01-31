@@ -445,11 +445,13 @@ def get_schedule_events(request):
         end_dt = f"{s.date.isoformat()}T{s.end_time.strftime('%H:%M:%S')}"
         
         events.append({
+            "id": f"schedule-{s.id}",  # ADD THIS: Unique ID for the JS Set
             "title": f"📘 {s.subject.name}",
             "start": start_dt,
             "end": end_dt,
             "backgroundColor": "#6366F1",
             "borderColor": "transparent",
+            "is_completed": s.is_completed,  # <-- ADD THIS LINE
             "extendedProps": {
                 "description": f"Task {s.task_type}<br><b>Priority:</b> {s.priority}"
             }
@@ -516,3 +518,24 @@ def save_study_log(request):
         ).update(is_completed=True)
 
         return JsonResponse({"status": "success"})
+
+
+# scheduler/views.py
+from django.http import HttpResponse
+from django.utils import timezone
+from .models import StudySchedule
+
+@login_required
+def stop_schedule(request):
+    # We use DELETE method to match hx-delete
+    if request.method == "DELETE":
+        today = timezone.localtime().date()
+        StudySchedule.objects.filter(user=request.user, date=today).delete()
+        
+        # Return a success message or an empty div to clear the UI
+        return HttpResponse("""
+            <div class="p-6 text-center bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                <p class="text-gray-500">Schedule cleared successfully.</p>
+            </div>
+        """)
+    return HttpResponse("Method not allowed", status=405)
