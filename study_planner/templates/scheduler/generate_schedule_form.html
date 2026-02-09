@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}Generate Study Schedule{% endblock %}
+
+{% block content %}
+<div class="min-h-[75vh] flex items-center justify-center">
+    <div class="bg-white w-full max-w-3xl rounded-2xl shadow-lg border p-8">
+
+        <!-- Header -->
+        <div class="text-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-900">🤖 Generate Study Schedule</h1>
+            <p class="text-gray-500 mt-2">
+                Select exam subjects and dates. Scheduling will be optimized automatically.
+            </p>
+        </div>
+
+        <!-- Warning -->
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <p class="text-sm text-yellow-700">
+                ⚠️ Existing schedules will be removed and regenerated.
+            </p>
+        </div>
+
+        <form method="post" action="{% url 'scheduler:generate_schedule_create' %}" class="py-6">
+            {% csrf_token %}
+
+            <!-- Global Preferences -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">
+                        Max Study Hours / Day
+                    </label>
+                    <input type="number" name="hours_per_day" value="4" min="1" max="12" required
+                        class="w-full rounded-lg border-gray-300 focus:ring-purple-500 focus:border-purple-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">
+                        Preferred Start Time
+                    </label>
+                    <input type="time" name="start_time" value="18:00" required
+                        class="w-full rounded-lg border-gray-300 focus:ring-purple-500 focus:border-purple-500">
+                </div>
+            </div>
+
+            <!-- Subjects -->
+            <div>
+                <h2 class="text-lg font-semibold mb-3">Exam Subjects</h2>
+
+                <div id="subjectsContainer" class="space-y-4">
+                    <!-- Row 0 -->
+                    <div class="subject-row border rounded-lg p-4 bg-gray-50">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
+
+                            <!-- Subject select -->
+                            <select name="subjects[0][id]" required
+                                class="subject-select rounded-lg border-gray-300 focus:ring-purple-500 focus:border-purple-500"
+                                onchange="updateSubjectOptions()">
+
+                                <option value="" disabled selected>Select subject</option>
+                                {% for s in subjects %}
+                                <option value="{{ s.id }}">
+                                    {{ s.name }} ({{ s.get_difficulty_display }})
+                                </option>
+                                {% endfor %}
+                            </select>
+
+                            <!-- Exam date -->
+                            <input type="date" name="subjects[0][exam_date]" required
+                                class="rounded-lg border-gray-300 focus:ring-purple-500 focus:border-purple-500">
+
+                            <!-- Remove -->
+                            <button type="button" onclick="removeSubject(this)"
+                                class="text-red-600 hover:text-red-700 font-medium">
+                                ✖ Remove
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" onclick="addSubject()"
+                    class="mt-4 text-purple-600 hover:text-purple-700 font-medium">
+                    + Add another subject
+                </button>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex gap-3 pt-4">
+                <a href="{% url 'scheduler:schedule_view' %}"
+                    class="flex-1 text-center bg-gray-100 text-gray-700 py-3 rounded-lg hover:bg-gray-200">
+                    Cancel
+                </a>
+
+                <button type="submit" class="flex-1 bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700">
+                    🚀 Generate Schedule
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script>
+    let index = 1;
+
+    function addSubject() {
+        const container = document.getElementById("subjectsContainer");
+
+        const html = `
+  <div class="subject-row border rounded-lg p-4 bg-gray-50">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
+    <select name="subjects[${index}][id]" required
+  class="subject-select rounded-lg border-gray-300 focus:ring-purple-500 focus:border-purple-500"
+  onchange="updateSubjectOptions()">
+
+        <option value="" disabled selected>Select subject</option>
+        {% for s in subjects %}
+          <option value="{{ s.id }}">
+            {{ s.name }} ({{ s.get_difficulty_display }})
+          </option>
+        {% endfor %}
+      </select>
+
+      <input type="date" name="subjects[${index}][exam_date]" required
+        class="rounded-lg border-gray-300 focus:ring-purple-500 focus:border-purple-500">
+
+      <button type="button" onclick="removeSubject(this)"
+        class="text-red-600 hover:text-red-700 font-medium">
+        ✖ Remove
+      </button>
+    </div>
+  </div>`;
+
+        container.insertAdjacentHTML("beforeend", html);
+        index++;
+        updateSubjectOptions();
+
+    }
+    function updateSubjectOptions() {
+        const selects = document.querySelectorAll(".subject-select");
+        const selectedValues = Array.from(selects)
+            .map(s => s.value)
+            .filter(v => v);
+
+        selects.forEach(select => {
+            Array.from(select.options).forEach(option => {
+                if (!option.value) return;
+
+                option.disabled =
+                    selectedValues.includes(option.value) &&
+                    option.value !== select.value;
+            });
+        });
+    }
+
+    function removeSubject(btn) {
+        btn.closest(".subject-row").remove();
+        updateSubjectOptions(); 
+    }
+
+    function removeSubject(btn) {
+        btn.closest(".subject-row").remove();
+    }
+</script>
+{% endblock %}

@@ -20,22 +20,6 @@ class Subject(models.Model):
     def total_chapters(self):
         return self.chapters.count()
 
-    # def get_user_progress(self, user):
-    #     from exams.models import ChapterProgress
-
-    #     total = self.total_chapters
-    #     completed = ChapterProgress.objects.filter(
-    #         user=user,
-    #         chapter__subject=self,
-    #         is_mastered=True
-    #     ).count()
-
-    #     percent = (completed / total * 100) if total > 0 else 0
-    #     return {
-    #         "total": total,
-    #         "completed": completed,
-    #         "percent": percent
-    #     }
     def get_user_progress(self, user):
         from exams.models import ChapterProgress
 
@@ -73,45 +57,6 @@ class Subject(models.Model):
     def __str__(self):
         return self.name
 
-# class Subject(models.Model):
-#     DIFFICULTY_CHOICES = [
-#         (1, 'Easy'),
-#         (2, 'Medium'),
-#         (3, 'Hard'),
-#     ]
-
-#     user = models.ForeignKey(
-#         settings.AUTH_USER_MODEL,
-#         on_delete=models.CASCADE
-#     )
-#     name = models.CharField(max_length=200)
-#     code = models.CharField(max_length=20)
-#     difficulty = models.IntegerField(choices=DIFFICULTY_CHOICES)
-#     total_chapters = models.IntegerField(default=0)
-#     completed_chapters = models.IntegerField(default=0)
-#     created_at = models.DateTimeField(auto_now_add=True)
-
-
-#     def get_user_progress(self, user):
-#         from exams.models import ChapterProgress
-
-#         total = self.chapter_set.count()
-#         completed = ChapterProgress.objects.filter(
-#             user=user, 
-#             chapter__subject=self, 
-#             is_mastered=True
-#         ).count()
-        
-#         percent = (completed / total * 100) if total > 0 else 0
-#         return {
-#             'total': total,
-#             'completed': completed,
-#             'percent': percent
-#         }
-
-#     def __str__(self):
-#         return self.name
-
 
 class Chapter(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='chapters')
@@ -124,7 +69,7 @@ class Chapter(models.Model):
     def is_pdf(self):
         return self.note_file and self.note_file.name.lower().endswith(".pdf")
     def save(self, *args, **kwargs):
-        # 🔑 Auto-increment chapter number PER SUBJECT
+        # Auto-increment chapter number PER SUBJECT
         if not self.chapter_number:
             last_number = (
                 Chapter.objects
@@ -137,7 +82,7 @@ class Chapter(models.Model):
         super().save(*args, **kwargs)
 
     class Meta:
-        unique_together = ('subject', 'chapter_number') # Prevents duplicate chapter numbers
+        unique_together = ('subject', 'chapter_number') 
         ordering = ["chapter_number"]
 
 class Question(models.Model):

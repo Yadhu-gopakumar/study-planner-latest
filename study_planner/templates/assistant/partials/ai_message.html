@@ -1,0 +1,48 @@
+{% comment %}
+  We generate a random ID to ensure this bubble and its script 
+  are uniquely linked, avoiding the 'appending' bug.
+{% endcomment %}
+{% with msg_id=reply|slice:":3"|slugify|add:"-timestamp-"|add:"123456789"|random %}
+
+<div class="flex items-start space-x-3 max-w-[80%] mb-4 message-appear" id="container-{{ msg_id }}">
+    <div class="w-8 h-8 bg-indigo-100 rounded-lg flex-shrink-0 flex items-center justify-center text-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#314D1C"><path d="M160-360q-50 0-85-35t-35-85q0-50 35-85t85-35v-80q0-33 23.5-56.5T240-760h120q0-50 35-85t85-35q50 0 85 35t35 85h120q33 0 56.5 23.5T800-680v80q50 0 85 35t35 85q0 50-35 85t-85 35v160q0 33-23.5 56.5T720-120H240q-33 0-56.5-23.5T160-200v-160Zm200-80q25 0 42.5-17.5T420-500q0-25-17.5-42.5T360-560q-25 0-42.5 17.5T300-500q0 25 17.5 42.5T360-440Zm240 0q25 0 42.5-17.5T660-500q0-25-17.5-42.5T600-560q-25 0-42.5 17.5T540-500q0 25 17.5 42.5T600-440ZM320-280h320v-80H320v80Zm-80 80h480v-480H240v480Zm240-240Z"/></svg>    </div>
+    
+    <div class="bg-white p-4 rounded-[1.5rem] rounded-tl-none shadow-sm border border-gray-100">
+        <p class="typing-target text-sm text-gray-700 leading-relaxed whitespace-pre-wrap"></p>
+        
+        <span class="text-[9px] text-gray-400 mt-2 block uppercase font-bold">
+            {% now "h:i A" %}
+        </span>
+    </div>
+</div>
+
+{{ reply|json_script:msg_id }}
+
+<script>
+    (function() {
+        const id = "{{ msg_id }}";
+        const dataTag = document.getElementById(id);
+        const container = document.getElementById("container-" + id);
+        
+        if (dataTag && container) {
+            const target = container.querySelector(".typing-target");
+            const content = JSON.parse(dataTag.textContent);
+            let i = 0;
+            const speed = 15;
+
+            function typeWriter() {
+                if (i < content.length) {
+                    target.textContent += content.charAt(i);
+                    i++;
+                    const chatBox = document.getElementById('chat-box');
+                    if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+                    setTimeout(typeWriter, speed);
+                }
+            }
+            dataTag.remove();
+            typeWriter();
+        }
+    })();
+</script>
+{% endwith %}

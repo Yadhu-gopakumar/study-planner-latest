@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    .main-content { padding: 0 !important; }
+    
+    .htmx-indicator { display: none !important; }
+
+    #chat-form.htmx-request + * #ai-typing, 
+    #chat-form.htmx-request ~ * #ai-typing,
+    .htmx-request #ai-typing,
+    #ai-typing.htmx-request {
+        display: flex !important;
+    }
+
+    /* 2. TYPING DOTS ANIMATION */
+    .typing-dots::after {
+        content: 'thinking';
+        animation: dots 1.4s infinite;
+    }
+
+    @keyframes dots {
+        0%   { content: 'thinking'; }
+        25%  { content: 'thinking.'; }
+        50%  { content: 'thinking..'; }
+        75%  { content: 'thinking...'; }
+    }
+
+    /* 3. BUBBLE ANIMATIONS */
+    .message-appear { animation: slideUp 0.3s ease-out; }
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .subject-card.active { 
+        background-color: white; 
+        border-color: #6366f1; 
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); 
+    }
+</style>
+
+<div class="flex h-full bg-white rounded-[1.5rem] p-2 shadow-sm border border-gray-100 overflow-hidden">
+    <div class="w-1/5 border-r border-gray-50 flex flex-col bg-gray-200 rounded-[2.5rem]">
+        <div class="p-6">
+            <h2 class="text-xl font-black text-indigo-900 mb-4">Your Subjects</h2>
+        </div>
+        <div class="flex-1 overflow-y-auto px-1 space-y-2">
+            {% for subject in subjects %}
+            <div hx-get="{% url 'assistant:load_history' subject.id %}"
+                 hx-target="#messages-wrapper" 
+                 hx-indicator="#history-loading"
+                 onclick="selectSubjectUI(this)"
+                 class="subject-card hover:bg-white p-4 rounded-[1.5rem] flex items-center space-x-3 cursor-pointer transition-all border-transparent border-2">
+                <div class="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 font-bold">
+                    {{ subject.name|slice:":1" }}
+                </div>
+                <p class="font-bold text-sm text-gray-800">{{ subject.name }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="flex-1 flex flex-col bg-white relative">
+        <div class="p-4 border-b border-gray-50 flex justify-between items-center ">
+            <div class="flex items-center space-x-4">
+                <div class="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center text-2xl">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960" width="40px" fill="#1E124A"><path d="M151.33-370.67q-46.66 0-79-32.47Q40-435.61 40-482t32.47-78.86q32.47-32.47 78.86-32.47V-702q0-27 19.84-46.83Q191-768.67 218-768.67h150.67q0-46.66 32.47-79Q433.61-880 480-880t78.86 32.47q32.47 32.47 32.47 78.86H742q27 0 46.83 19.84Q808.67-729 808.67-702v108.67q46.66 0 79 32.47Q920-528.39 920-482t-32.47 78.86q-32.47 32.47-78.86 32.47v184q0 27-19.84 46.84Q769-120 742-120H218q-27 0-46.83-19.83-19.84-19.84-19.84-46.84v-184ZM348.82-464q19.51 0 33.01-13.66 13.5-13.65 13.5-33.16 0-19.51-13.65-33.01-13.66-13.5-33.17-13.5t-33.01 13.65Q302-530.02 302-510.51t13.66 33.01q13.65 13.5 33.16 13.5Zm262.67 0q19.51 0 33.01-13.66 13.5-13.65 13.5-33.16 0-19.51-13.66-33.01-13.65-13.5-33.16-13.5-19.51 0-33.01 13.65-13.5 13.66-13.5 33.17t13.65 33.01q13.66 13.5 33.17 13.5ZM314.67-283.33h330.66V-350H314.67v66.67ZM218-186.67h524V-702H218v515.33Zm262-258Z"/></svg>
+                </div>
+                <div>
+                    <h4 class="font-bold text-indigo-900">AI Assistant</h4>
+                    <span class="flex items-center text-[10px] text-emerald-500 font-bold">
+                        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1 animate-pulse"></span> ALWAYS ONLINE
+                    </span>
+                </div>
+            </div>
+            <button id="delete-chat-btn" class="hidden text-gray-400 hover:text-red-500 p-2 rounded-lg" hx-confirm="Clear history?" hx-target="#messages-wrapper">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-6 bg-gray-50/30 relative flex flex-col" id="chat-box" style="scroll-behavior: smooth;">
+            
+            <div id="messages-wrapper" class="flex-1">
+                <div id="new-messages-target">
+                    <div id="initial-state" class="h-full flex flex-col items-center justify-center text-center space-y-4 py-20">
+                        <div class="text-6xl">📥</div>
+                        <h3 class="text-xl font-bold text-indigo-900">Your AI Tutor is ready</h3>
+                        <p class="text-gray-500 max-w-xs">Select a subject to start.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="ai-typing" class="htmx-indicator flex items-start space-x-3 mb-4 mt-4">
+                <div class="w-8 h-8 bg-indigo-100 rounded-lg flex-shrink-0 flex items-center justify-center text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#314D1C"><path d="M160-360q-50 0-85-35t-35-85q0-50 35-85t85-35v-80q0-33 23.5-56.5T240-760h120q0-50 35-85t85-35q50 0 85 35t35 85h120q33 0 56.5 23.5T800-680v80q50 0 85 35t35 85q0 50-35 85t-85 35v160q0 33-23.5 56.5T720-120H240q-33 0-56.5-23.5T160-200v-160Zm200-80q25 0 42.5-17.5T420-500q0-25-17.5-42.5T360-560q-25 0-42.5 17.5T300-500q0 25 17.5 42.5T360-440Zm240 0q25 0 42.5-17.5T660-500q0-25-17.5-42.5T600-560q-25 0-42.5 17.5T540-500q0 25 17.5 42.5T600-440ZM320-280h320v-80H320v80Zm-80 80h480v-480H240v480Zm240-240Z"/></svg>
+                </div>
+                <div class="bg-white p-3 rounded-[1.2rem] rounded-tl-none shadow-sm border border-gray-100">
+                    <span class="typing-dots text-xs font-bold text-indigo-500 uppercase tracking-widest"></span>
+                </div>
+            </div>
+
+            <div id="history-loading" class="htmx-indicator absolute inset-0 bg-white/80 z-50 flex items-center justify-center">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            </div>
+        </div>
+   
+        <form 
+            id="chat-form"
+            hx-post="{% url 'assistant:chat_htmx' %}"
+            hx-target="#new-messages-target"
+            hx-swap="beforeend"
+            hx-indicator="#ai-typing"
+            hx-on::before-request="handleBeforeSend()"
+            class="relative flex items-center p-4 border-t border-gray-50"
+            autocomplete="off"
+        >
+            {% csrf_token %}
+            <input type="hidden" name="subject_id" id="subject_id">
+            <input name="question" autocomplete="false" id="message" type="text" placeholder="Type message..." class="w-full bg-gray-50 rounded-2xl py-4 pl-6 pr-16 focus:outline-none" required>
+            <button type="submit" class="absolute right-8 bg-[#6C5DD3] text-white p-3 rounded-xl">➤</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function selectSubjectUI(element) {
+        document.querySelectorAll('.subject-card').forEach(c => c.classList.remove('active'));
+        element.classList.add('active');
+        const id = element.getAttribute('hx-get').split('/').filter(Boolean).pop();
+        document.getElementById('subject_id').value = id;
+        
+        const deleteBtn = document.getElementById('delete-chat-btn');
+        deleteBtn.classList.remove('hidden');
+        deleteBtn.setAttribute('hx-delete', `/assistant/chat/delete/${id}/`);
+        htmx.process(deleteBtn);
+    }
+
+    function handleBeforeSend() {
+
+        const initialState = document.getElementById("initial-state");
+    if (initialState) initialState.style.display = "none";
+
+    setTimeout(() => {
+        document.getElementById("message").value = "";
+        scrollChat();
+    }, 15);
+}
+
+    function scrollChat() {
+        const chatBox = document.getElementById("chat-box");
+        // Use a slightly longer timeout to let HTMX trigger the indicator display
+        setTimeout(() => {
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }, 100);
+    }
+
+    document.body.addEventListener('htmx:configRequest', (event) => {
+    event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
+    
+    if (event.detail.elt.id === 'chat-form') {
+        const messageInput = document.getElementById('message');
+        const question = messageInput.value;
+        if (!question.trim()) return;
+
+        // 1. Generate the current time 
+        const now = new Date();
+        const timeString = now.toLocaleTimeString([], { 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            hour12: true 
+        }).toUpperCase(); // Converts 'pm' to 'PM'
+        console.log(now,timeString)
+        // 2. Create the bubble with the time span
+        const userBubble = `
+            <div class="flex justify-end mb-4 message-appear">
+                <div class="bg-indigo-600 p-4 rounded-[1.5rem] rounded-tr-none text-white text-sm shadow-md shadow-indigo-100 max-w-[80%]">
+                    <p>${question}</p>
+                    <span class="text-[10px] text-indigo-200 mt-2 block uppercase font-bold text-right">
+                        ${timeString}
+                    </span>
+                </div>
+            </div>`;
+
+        document.getElementById('new-messages-target').insertAdjacentHTML('beforeend', userBubble);
+        scrollChat();
+    }
+});
+    document.body.addEventListener('htmx:afterOnLoad', () => scrollChat());
+</script>
+{% endblock %}

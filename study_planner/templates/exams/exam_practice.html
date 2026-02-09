@@ -54,7 +54,6 @@ let timeLeft = 300;
 let timerId = null;
 
 function startExam() {
-    // Hide all UI elements that allow navigation
     const toHide = ['aside', 'nav', '.sidebar', '.navbar'];
     toHide.forEach(s => {
         const el = document.querySelector(s);
@@ -84,7 +83,6 @@ function submitResults() {
         const selected = block.querySelector('input[type="radio"]:checked');
         const correct = block.dataset.correct.trim().toUpperCase();
         if (selected) {
-            // Check if the first character of the option (e.g., 'A') matches the correct answer
             if (selected.value.trim().toUpperCase().startsWith(correct)) {
                 score++;
             }

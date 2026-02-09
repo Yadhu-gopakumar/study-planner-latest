@@ -3,6 +3,26 @@ from django.conf import settings
 from subjects.models import Chapter
 
 
+class Exam_time_table(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True, blank=True
+    )
+
+    subject = models.ForeignKey(
+        "subjects.Subject",
+        on_delete=models.CASCADE
+    )
+
+    exam_date = models.DateField()
+
+
+    def __str__(self):
+        return f"{self.subject.name} – {self.exam_date}"
+
+
+
 class Exam(models.Model):
     subject = models.ForeignKey(
         "subjects.Subject",   
@@ -22,10 +42,9 @@ class Exam(models.Model):
 
 class ExamAttempt(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    # Changed from Chapter to Subject for full-subject exams
     subject = models.ForeignKey( "subjects.Subject", on_delete=models.CASCADE) 
     score = models.IntegerField(default=0)
-    total_possible = models.IntegerField(default=0) # Good to track total
+    total_possible = models.IntegerField(default=0) 
     completed_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -46,7 +65,7 @@ class ChapterProgress(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ('user', 'chapter') # One progress record per user per chapter
+        unique_together = ('user', 'chapter') 
 
     def __str__(self):
         return f"{self.user.username} - {self.chapter.title} Progress"

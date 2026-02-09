@@ -9,13 +9,10 @@ from nltk.tokenize import sent_tokenize
 
 import os
 
-# Get the directory where this script is located
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 model_path = os.path.join(BASE_DIR, "q_gen_model.pkl")
 
-# Load trained TF-IDF model using the absolute path
 vectorizer = joblib.load(model_path)
-# Download tokenizer (safe even if already present)
 try:
     nltk.data.find("tokenizers/punkt")
 except LookupError:
@@ -79,11 +76,6 @@ def concept_key(question):
 
 
 # -------------------- SENTENCE RANKING --------------------
-# def rank_sentences(sentences):
-#     tfidf_matrix = vectorizer.transform(sentences)
-#     sentence_scores = tfidf_matrix.sum(axis=1).A1
-#     ranked_indexes = rank_sentences([clean_text(s) for s in sentences])
-#     return ranked_indexes
 
 def rank_sentences(sentences):
     # Clean the sentences first if you want, then transform
@@ -97,37 +89,7 @@ def rank_sentences(sentences):
     return ranked_indexes
 
 # -------------------- QUESTION GENERATION --------------------
-# def make_question(sentence):
-#     s = sentence.lower()
 
-#     if "email security" in s and "enhancement" in s:
-#         return "Explain the primary goal of email security"
-
-#     if "confidentiality" in s or "authentication" in s or "integrity" in s:
-#         return "Explain confidentiality, authentication, and integrity in email security"
-
-#     if "audit" in s and "reporting" in s:
-#         return "Explain audit and reporting in email security"
-
-#     if "scheme" in s and "pgp" in s:
-#         return "Explain the scheme used in PGP"
-
-#     if "operation" in s and "pgp" in s:
-#         return "Explain the operation of PGP"
-
-#     if "session key" in s:
-#         return "Explain session key decryption in PGP"
-
-#     if "ascii" in s or "radix" in s:
-#         return "Explain ASCII conversion in PGP"
-
-#     if "key ring" in s:
-#         return "Explain private key ring and public key ring"
-
-#     if "primary goal" in s:
-#         return "Explain the primary goal of email security"
-   
-#     return "Explain: " + sentence.capitalize()
 def make_question(sentence):
     s = sentence.lower()
 

@@ -4,7 +4,6 @@ from .views import *
 
 app_name = "exams"
 
-# exams/urls.py
 urlpatterns = [
     path("start-exam/<int:subject_id>/", start_exam_view, name="start_exam"),
     path("chapter-quiz/<int:chapter_id>/", chapter_quiz_view, name="chapter_quiz"), # Add this

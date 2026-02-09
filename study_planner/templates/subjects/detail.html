@@ -66,7 +66,22 @@
         </p>
 
     </div>
-
+<!-- timer--------- -->
+<div class="bg-white p-6 rounded-xl shadow-sm border mb-6">
+    <div id="timer-ui" class="flex items-center justify-between">
+        <div>
+            <h3 class="text-lg font-bold">Study Session</h3>
+            <p id="timer-status" class="text-sm text-gray-500">Ready to start?</p>
+            <p id="live-clock" class="text-2xl font-mono font-bold text-indigo-600 hidden">00:00:00</p>
+        </div>
+        
+        <button id="session-btn" onclick="handleSession()" 
+            class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition">
+            Start Studying
+        </button>
+    </div>
+</div>
+<!-- timer--------- -->
     <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6 ml-2">Course Curriculum</h3>
 
 
@@ -131,9 +146,20 @@
                     Delete 🗑️
                 </button>
                 <button onclick="openEditModal('{{ slot.data.id }}')"
-                    class="flex-grow bg-gray-50 text-[#6C5DD3] py-2 rounded-xl text-xs font-bold">
+                    class="flex-grow bg-gray-200 hover:bg-gray-300 text-[#6C5DD3] py-2 rounded-xl text-xs font-bold">
                     Update ✏️
                 </button>
+                {% if slot.data.is_pdf %}
+                <a href="{% url 'subjects:process_ai_view' slot.data.id %}" onclick="startAILoading()" >
+                    {% else %}
+                    <a href="{% url 'materials:process_ai_view' slot.data.id %}" onclick="startAILoading()"
+ >
+                        {% endif %}
+                        <button
+                            class="flex-grow bg-indigo-500 hover:bg-indigo-700 text-[#ffffff] py-2 px-2 rounded-xl text-xs font-bold">
+                            View Summary ✨
+                        </button>
+                    </a>
             </div>
         </div>
 
@@ -144,17 +170,18 @@
         {% endfor %}
 
 
-        <!-- ADD CHAPTER CARD -->
 
 
     </div>
 </div>
+
+<!-- ----------loader-------------- -->
 <div id="loader"
     class="hidden fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex flex-col items-center justify-center">
     <div class="w-16 h-16 border-4 border-[#6C5DD3] border-t-transparent rounded-full animate-spin mb-4"></div>
     <p class="text-[#6C5DD3] font-bold animate-pulse">generating your exam questions...</p>
 </div>
-<!-- Loading Indicator -->
+<!-- ----------loader-------------- -->
 
 </div>
 
@@ -206,13 +233,119 @@
     <div id="examContainer" class="hidden fixed inset-0 bg-white z-[9999] overflow-y-auto p-10">
         <h1 class="text-2xl font-bold mb-6">Exam Mode</h1>
 
-        <!-- YOUR QUESTIONS HERE -->
     </div>
 
 </div>
 {% endblock %}
 
 {% block extra_js %}
+<script>
+    const currentSubjectId = "{{ subject.id }}";
+    const currentSubjectName = "{{ subject.name }}";
+
+    function handleSession() {
+        const activeSession = JSON.parse(localStorage.getItem('active_study_session'));
+
+        if (!activeSession) {
+            // START: No timer
+            const sessionData = {
+                startTime: Date.now(),
+                subjectId: currentSubjectId,
+                subjectName: currentSubjectName
+            };
+            localStorage.setItem('active_study_session', JSON.stringify(sessionData));
+            startUI(sessionData.startTime);
+        } 
+        else if (activeSession.subjectId === currentSubjectId) {
+            // STOP: Timer is for THIS subject
+            stopSession(activeSession.startTime);
+        } 
+        else {
+            // BLOCKing Timer is for DIFFERENT subject if alredy running a timer
+            Swal.fire({
+                title: 'Timer Already Running!',
+                text: `You are currently studying ${activeSession.subjectName}. Please end that session before starting a new one.`,
+                icon: 'warning',
+                confirmButtonColor: '#4F46E5'
+            });
+        }
+    }
+
+    function startUI(startTime) {
+        const btn = document.getElementById('session-btn');
+        const clock = document.getElementById('live-clock');
+        const status = document.getElementById('timer-status');
+        
+        btn.innerText = "End Session";
+        btn.classList.replace('bg-indigo-600', 'bg-red-600');
+        clock.classList.remove('hidden');
+        if(status) status.innerText = "Session in progress...";
+
+        // for clearing any of existing intervals
+        if (window.timerInterval) clearInterval(window.timerInterval);
+        
+        window.timerInterval = setInterval(() => {
+            const diff = Math.floor((Date.now() - startTime) / 1000);
+            const h = Math.floor(diff / 3600).toString().padStart(2, '0');
+            const m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
+            const s = (diff % 60).toString().padStart(2, '0');
+            clock.innerText = `${h}:${m}:${s}`;
+        }, 1000);
+    }
+
+    function stopSession(startTime) {
+        const endTime = Date.now();
+        const durationMins = Math.round((endTime - startTime) / 60000);
+
+        if (durationMins < 1) {
+            const saveShort = confirm("This session was less than a minute. Save it anyway?");
+            if (!saveShort) {
+                localStorage.removeItem('active_study_session');
+                location.reload();
+                return;
+            }
+        }
+
+        fetch("{% url 'scheduler:save_study_log' %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                subject_id: currentSubjectId,
+                start_time: new Date(parseInt(startTime)).toISOString(),
+                duration: durationMins
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            localStorage.removeItem('active_study_session');
+            location.reload();
+        })
+        .catch(err => {
+            console.error("Error saving log:", err);
+            alert("Failed to save session. Check your connection.");
+        });
+    }
+
+    window.addEventListener('load', () => {
+        const activeSession = JSON.parse(localStorage.getItem('active_study_session'));
+        const status = document.getElementById('timer-status');
+        
+        if (activeSession) {
+            if (activeSession.subjectId === currentSubjectId) {
+
+                startUI(activeSession.startTime);
+            } else {
+                // Show warning that a session is active elsewhere
+                if(status) status.innerText = `⚠️ You have an active session for ${activeSession.subjectName}`;
+                const btn = document.getElementById('session-btn');
+                btn.title = `Finish studying ${activeSession.subjectName} first`;
+            }
+        }
+    });
+</script>
 <script>
 
     function showLoader() {
@@ -224,7 +357,6 @@
         // Show loader
         document.getElementById("ai-loader").classList.remove("hidden");
 
-        // Optional: prevent double clicks
         document.querySelectorAll('a[href*="process_ai"]').forEach(btn => {
             btn.classList.add("pointer-events-none", "opacity-60");
         });
@@ -233,21 +365,18 @@
 
     // Function to handle opening the edit modal
     function openEditModal(chapterId) {
-        // You can redirect to an edit page or open a modal
-        // For now, let's redirect to the edit URL we planned earlier
+    
         window.location.href = `/subjects/chapter/${chapterId}/edit/`;
     }
 
     // Function to handle deletion with a confirmation prompt
     function confirmDelete(chapterId) {
-        // A simple browser confirmation for safety
         if (confirm("Are you sure you want to delete this chapter? All AI results and notes will be lost.")) {
-            // Create a hidden form to send a POST request for security
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = `/subjects/chapter/${chapterId}/delete/`;
 
-            // Add CSRF token
+            // CSRF token
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
             const hiddenInput = document.createElement('input');
             hiddenInput.type = 'hidden';
@@ -282,7 +411,6 @@
         const fileInfo = document.getElementById('file-info');
         const fileIcon = document.getElementById('file-icon');
 
-        // 1. Visual Feedback on Drag Over
         fileInput.addEventListener('dragenter', () => {
             dropZone.classList.add('bg-indigo-100', 'border-[#6C5DD3]');
         });
@@ -311,7 +439,6 @@
         });
     });
 
-    // Update your existing closeModal to reset the file input
     function closeModal() {
         document.getElementById('addChapterModal').classList.add('hidden');
         // Reset form UI

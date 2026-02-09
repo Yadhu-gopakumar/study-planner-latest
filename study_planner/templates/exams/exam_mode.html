@@ -21,7 +21,6 @@
             backdrop-filter: blur(12px);
         }
 
-        /* Custom Radio Styling: Highlight the label when the radio is checked */
         input[type="radio"]:checked+span+.check-mark {
             display: block;
         }
@@ -31,7 +30,6 @@
             font-weight: 700;
         }
 
-        /* The magical class that highlights the whole box */
         .option-box:has(input[type="radio"]:checked) {
             border-color: #4f46e5;
             background-color: #f5f3ff;
@@ -148,7 +146,6 @@
 
 
     <script>
-        // Fix: Remove the space after the colon in 'default:0'
         const TOTAL_QUESTIONS_COUNT = {{ questions.count|default:0 }};
     
         let timeLeft = 300;
@@ -156,8 +153,7 @@
         let violations = 0;
         let examActive = false;
     
-        // We use window. function name to ensure they are globally accessible 
-        // even if the script has minor issues elsewhere
+     
         window.startExamNow = function () {
             document.getElementById('startScreen').classList.add('hidden');
             document.getElementById('examInterface').classList.remove('hidden');

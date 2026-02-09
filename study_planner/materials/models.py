@@ -1,7 +1,6 @@
 from django.db import models
 from subjects.models import Subject
-# from scheduler.models import Chapter  # if you created Chapter
-# If Chapter not created yet, comment the line above and the FK below
+
 
 class StudyMaterial(models.Model):
     MATERIAL_TYPES = [
@@ -15,15 +14,10 @@ class StudyMaterial(models.Model):
         Subject,
         on_delete=models.CASCADE
     )
-    # chapter = models.ForeignKey(
-    #     Chapter,
-    #     on_delete=models.SET_NULL,
-    #     null=True,
-    #     blank=True
-    # )
-    # from scheduler.models import Chapter  ❌ comment this
+    from subjects.models import Chapter
+
     chapter = models.ForeignKey(
-    'scheduler.Chapter',  # string reference
+    Chapter,  
     on_delete=models.SET_NULL,
     null=True,
     blank=True
