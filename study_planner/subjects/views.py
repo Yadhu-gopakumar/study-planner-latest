@@ -14,8 +14,9 @@ import json, os
 import re
 import pdfplumber
 from dotenv import load_dotenv
-
-
+import edge_tts
+import asyncio
+from django.http import FileResponse, HttpResponse
 
 
 @login_required
@@ -251,7 +252,7 @@ def process_ai_view(request, chapter_id):
         return redirect("subjects:subject_detail", subject_id=chapter.subject.id)
 
     # limit text for speed & quality
-    pdf_text = pdf_text[:1200]
+    pdf_text = pdf_text[:6000]
 
     try:
         print("[DEBUG] Calling DeepSeek API...", flush=True)
@@ -345,13 +346,6 @@ def process_ai_view(request, chapter_id):
 
     return redirect("subjects:chapter-summery", chapter_id=chapter.id)
 
-import os
-import json
-import edge_tts
-import asyncio
-from django.conf import settings
-from django.http import FileResponse, HttpResponse
-from django.shortcuts import get_object_or_404
 
 def chapter_audio_view(request, chapter_id):
     chapter = get_object_or_404(Chapter, id=chapter_id, subject__user=request.user)
