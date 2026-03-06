@@ -232,15 +232,13 @@ def process_ai_view(request, chapter_id):
     chapter = get_object_or_404(
         Chapter, id=chapter_id, subject__user=request.user
     )
-
+      # STOP if summary already exists
+    if chapter.summary:
+        return redirect('subjects:subject_detail', chapter_id=chapter.id)
     if not chapter.note_file:
         messages.error(request, "No PDF file attached.")
         return redirect("subjects:subject_detail", subject_id=chapter.subject.id)
 
-    # Avoid re-running AI
-    if chapter.summary:
-        print("[DEBUG] Summary already exists, skipping AI", flush=True)
-        return redirect("subjects:chapter-summery", chapter_id=chapter.id)
 
     # Extract + clean PDF text
     print("[DEBUG] Extracting PDF text...", flush=True)
@@ -252,7 +250,7 @@ def process_ai_view(request, chapter_id):
         return redirect("subjects:subject_detail", subject_id=chapter.subject.id)
 
     # limit text for speed & quality
-    pdf_text = pdf_text[:6000]
+    pdf_text = pdf_text[:4000]
 
     try:
         print("[DEBUG] Calling DeepSeek API...", flush=True)
