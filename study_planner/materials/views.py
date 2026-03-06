@@ -67,6 +67,9 @@ def upload_material_view(request):
 def process_ai_view(request, chapter_id):
     chapter = get_object_or_404(Chapter, id=chapter_id)
     
+    # Stop if summary already exists
+    if chapter.summary:
+        return redirect('subjects:chapter-summery', chapter_id=chapter.id)
     if not chapter.note_file:
         return redirect('subjects:subject_detail', subject_id=chapter.subject.id)
 
