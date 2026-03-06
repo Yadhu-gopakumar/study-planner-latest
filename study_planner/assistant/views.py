@@ -15,7 +15,7 @@ client = OpenAI(
     base_url="https://api.deepseek.com"
 )
 
-MAX_CHARS = 12000 
+MAX_CHARS = 2000 
 
 def get_subject_context(subject):
     chapters = subject.chapters.all().order_by("chapter_number")
@@ -30,7 +30,38 @@ def get_subject_context(subject):
 
     return context
 
+def find_relevant_summary(question, subject):
+    question_words = question.lower().split()
 
+    best_chapter = None
+    best_score = 0
+
+    for ch in subject.chapters.all():
+        if not ch.summary:
+            continue
+
+        text = ch.summary.lower()
+        score = sum(1 for w in question_words if w in text)
+
+        if score > best_score:
+            best_score = score
+            best_chapter = ch
+
+    return best_chapter
+
+def extract_relevant_context(question, text):
+    sentences = text.split(".")
+    keywords = question.lower().split()
+
+    relevant = []
+
+    for s in sentences:
+        for k in keywords:
+            if k in s.lower():
+                relevant.append(s.strip())
+                break
+
+    return ". ".join(relevant[:5])
 
 def deepseek_chat(question, subject_context):
     messages = [
@@ -47,6 +78,8 @@ def deepseek_chat(question, subject_context):
                 "(e.g., a different subject or unrelated general knowledge), "
                 "reply: 'This topic is not covered in your syllabus.'\n"
                 "4. Keep the tone encouraging and academic."
+                "5. Keep answers concise. Limit responses to about 120–150 words."
+                "Do not use markdown formatting like ** or *.Use plain text."
             )
         },
         {
@@ -57,7 +90,8 @@ def deepseek_chat(question, subject_context):
     response = client.chat.completions.create(
         model="deepseek-chat",
         messages=messages,
-        temperature=0.3
+        temperature=0.3,
+        max_tokens=250
     )
 
     return response.choices[0].message.content
@@ -121,9 +155,18 @@ def chat_htmx(request):
         reply = check_for_greetings(question, request.user)
         
         if not reply:
-            # If it's not a greeting, proceed to the AI
-            context = get_subject_context(subject)
+            chapter = find_relevant_summary(question, subject)
+
+            context = ""
+            chapter_label = ""
+
+            if chapter:
+                context = extract_relevant_context(question, chapter.summary)
+                context = context[:800]
+                chapter_label = f"📖 From Chapter {chapter.chapter_number}: {chapter.title}\n\n"
+
             reply = deepseek_chat(question, context)
+            reply = chapter_label + reply
         # --- GREETING INTERCEPTOR END ---
 
         # Save User Message
