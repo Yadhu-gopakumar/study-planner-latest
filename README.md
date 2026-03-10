@@ -2,7 +2,9 @@
 
 ## Project Purpose
 
-Study Planner is an AI-powered, Django-based learning management system that helps students create intelligent study schedules, track learning progress, generate assessments, and receive personalized tutoring. It leverages machine learning for schedule optimization and AI for content summarization, question generation, and tutoring.
+Study Planner is an AI-powered, Django-based learning management system that helps students create intelligent study schedules, track learning progress, generate assessments, and receive personalized tutoring. It leverages machine learning for schedule optimization and AI for content summarization, question generation, tutoring, study time tracking, audio learning support, and intelligent reminders.
+
+The platform is designed to support different learning styles by combining visual learning, practice-based learning, and auditory learning methods within a single system.
 
 ---
 
@@ -110,6 +112,20 @@ Question
 **AI Summary Generation**
 - Deepseek API processes PDFs via OCR.space
 - Generates structured summaries
+
+### Additional Learning Feature
+
+**Audio Summary Feature**
+
+Some students understand and retain information better through listening. To support auditory learning styles, the system converts generated summaries into speech using Text-to-Speech technology.
+
+This allows students to:
+
+- Listen to summaries while studying
+- Repeat concepts through audio playback
+- Combine reading and listening for better retention
+
+The system uses **Edge TTS** to convert summarized text into audio format that can be played directly within the platform.
 
 ---
 
@@ -248,6 +264,29 @@ StudyLog
   - Daily progress (% completed tasks)
   - Global stats: total study hours, average exam score
   - Per-subject stats: hours studied, avg performance, chapters mastered
+
+### Additional Scheduler Features
+
+**Study Time Tracking**
+
+The system includes a built-in timer that tracks how long a student spends studying within the application. This timer automatically records study sessions and stores them in the `StudyLog` model.
+
+This allows the system to:
+
+- Track total study duration
+- Show daily and weekly study statistics
+- Analyze subject-wise study time
+- Improve study habit awareness
+
+**Timetable Alarm & Reminder System**
+
+When a student creates a timetable entry or study schedule, the system monitors the scheduled time. When the scheduled study time is reached, the system triggers a reminder similar to an alarm notification.
+
+This helps students:
+
+- Stay consistent with their study schedule
+- Avoid missing planned study sessions
+- Maintain disciplined study habits
 
 ---
 
@@ -445,11 +484,14 @@ User Asks Question
 1. Register with learning pace preference
 2. Add Subjects with difficulty levels
 3. Upload PDFs → System auto-summarizes + extracts questions
-4. View Summaries and study materials
-5. Take Chapter Quizzes → Unlock mastery badges
-6. Ask AI Tutor subject-specific questions
-7. Check Dashboard for ML-powered study recommendations
-8. Track Progress with visual stats (hours, scores, mastery %)
+4. Listen to AI generated **audio summaries** for better understanding
+5. View Summaries and study materials
+6. Take Chapter Quizzes → Unlock mastery badges
+7. Ask AI Tutor subject-specific questions
+8. Use study timer to track learning sessions
+9. Receive **timetable reminders / alarm notifications** for scheduled study time
+10. Check Dashboard for ML-powered study recommendations
+11. Track Progress with visual stats (hours, scores, mastery %)
 
 ---
 
