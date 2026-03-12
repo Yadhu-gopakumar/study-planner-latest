@@ -1,0 +1,9 @@
+services:
+  web:
+    build: .
+    container_name: study_planner_web
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    command: python study_planner/manage.py runserver 0.0.0.0:8000
