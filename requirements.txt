@@ -1,4 +1,4 @@
-aiofiles==0.6.0
+﻿aiofiles==0.6.0
 aiohappyeyeballs==2.6.1
 aiohttp==3.13.3
 aiosignal==1.4.0
@@ -96,7 +96,7 @@ python-dotenv==1.2.1
 pyzmq==27.1.0
 referencing==0.37.0
 regex==2026.1.15
-requests==2.25.1
+requests>=2.28.1
 rich==10.2.0
 rpds-py==0.30.0
 rsa==4.9.1
