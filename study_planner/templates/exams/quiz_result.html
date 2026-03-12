@@ -47,6 +47,9 @@
                 <div>
                     <p class="text-sm font-bold text-slate-800 line-clamp-1">{{ item.text }}</p>
                     <p class="text-xs text-slate-500">Correct Answer: {{ item.correct }}</p>
+                    <p class="text-xs {% if item.is_correct %}text-emerald-600{% else %}text-red-500{% endif %} font-medium">
+                        Your Answer: {{ item.user_ans }}
+                    </p>
                 </div>
             </div>
         </div>

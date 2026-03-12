@@ -23,9 +23,9 @@
                 </div>
 
                 <div class="grid gap-3 ml-12">
-                    {% for option in q.options_list %}
+                    {% for option in q.options_text.splitlines %}
                     <label class="flex items-center p-4 rounded-2xl border cursor-pointer hover:bg-indigo-50 transition group">
-                        <input type="radio" name="q{{ q.id }}" value="{{ option }}" class="mr-4 accent-[#6C5DD3]">
+                        <input type="radio" name="q{{ q.id }}" value="{{ option|slice:':1' }}" class="mr-4 accent-[#6C5DD3]">
                         <span class="text-gray-600 group-hover:text-indigo-900">{{ option }}</span>
                     </label>
                     {% endfor %}
@@ -76,14 +76,17 @@ function startExam() {
         if (timeLeft <= 0) { clearInterval(timerId); submitResults(); }
     }, 1000);
 }
-
 function submitResults() {
     let score = 0;
     document.querySelectorAll('.question-block').forEach(block => {
         const selected = block.querySelector('input[type="radio"]:checked');
-        const correct = block.dataset.correct.trim().toUpperCase();
+        // Grab just the first character of the correct answer (e.g., 'A')
+        const correct = block.dataset.correct.trim().toUpperCase().charAt(0);
+        
         if (selected) {
-            if (selected.value.trim().toUpperCase().startsWith(correct)) {
+            // Grab just the first character of the user's selected value
+            const answered = selected.value.trim().toUpperCase().charAt(0);
+            if (answered === correct) {
                 score++;
             }
         }

@@ -43,6 +43,7 @@ class Exam(models.Model):
 class ExamAttempt(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     subject = models.ForeignKey( "subjects.Subject", on_delete=models.CASCADE) 
+    chapter = models.ForeignKey("subjects.Chapter", on_delete=models.CASCADE, null=True, blank=True)
     score = models.IntegerField(default=0)
     total_possible = models.IntegerField(default=0) 
     completed_at = models.DateTimeField(auto_now_add=True)

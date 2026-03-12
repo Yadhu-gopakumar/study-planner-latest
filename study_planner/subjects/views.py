@@ -234,11 +234,11 @@ def process_ai_view(request, chapter_id):
     )
       # STOP if summary already exists
     if chapter.summary:
-        return redirect('subjects:chapter-summery', chapter_id=chapter.id)
+        return redirect("subjects:chapter-summery", chapter_id=chapter.id)
+
     if not chapter.note_file:
         messages.error(request, "No PDF file attached.")
-        return redirect("subjects:subject_detail", subject_id=chapter.subject.id)
-
+        return redirect('subjects:subject_detail', subject_id=chapter.subject.id)
 
     # Extract + clean PDF text
     print("[DEBUG] Extracting PDF text...", flush=True)
@@ -253,7 +253,7 @@ def process_ai_view(request, chapter_id):
     pdf_text = pdf_text[:4000]
 
     try:
-        print("[DEBUG] Calling DeepSeek API...", flush=True)
+        print("Calling DeepSeek API...", flush=True)
 
         client = OpenAI(
             api_key=os.getenv("DEEPSEEK_API_KEY"),
@@ -784,19 +784,24 @@ def clean_text(text):
     
     return text.strip()
 
+from django.views.decorators.cache import never_cache
+
+@never_cache
 def process_ai_view(request, chapter_id):
     print(f"\n[DEBUG] Starting AI summary for Chapter {chapter_id}", flush=True)
 
     chapter = get_object_or_404(
         Chapter, id=chapter_id, subject__user=request.user
     )
-      # STOP if summary already exists
-    if chapter.summary:
-        return redirect('subjects:subject_detail', chapter_id=chapter.id)
+
+     # If summary already generated → show it
+    if chapter.summary and chapter.summary != "AI summary generation failed. Please try again later.":
+        return redirect('subjects:chapter-summery', chapter_id=chapter.id)
+
+    # If no PDF attached
     if not chapter.note_file:
         messages.error(request, "No PDF file attached.")
-        return redirect("subjects:subject_detail", subject_id=chapter.subject.id)
-
+        return redirect('subjects:subject_detail', subject_id=chapter.subject.id)
 
     # Extract + clean PDF text
     print("[DEBUG] Extracting PDF text...", flush=True)
@@ -944,6 +949,136 @@ def chapter_audio_view(request, chapter_id):
 
 
 
+# def generate_exam_questions_view(request, chapter_id):
+#     chapter = get_object_or_404(
+#         Chapter, id=chapter_id, subject__user=request.user
+#     )
+
+#     if not chapter.summary:
+#         messages.error(request, "Generate summary first.")
+#         return redirect("subjects:view_ai_results", chapter_id=chapter.id)
+
+#     if chapter.questions.exists():
+#         return redirect("subjects:chapter-questions", chapter_id=chapter.id)
+
+#     try:
+#         summary_data = json.loads(chapter.summary)
+#         clean_text = summary_data.get("summary_paragraph", "")
+#         for pts in summary_data.get("points", {}).values():
+#             clean_text += " " + " ".join(pts)
+#     except Exception:
+#         clean_text = chapter.summary
+
+#     # Generate base question ideas (SEEDS)
+#     base_questions = generate_questions_from_text(clean_text, limit=10)
+
+#     client = OpenAI(
+#         api_key=os.getenv("DEEPSEEK_API_KEY"),
+#         base_url="https://api.deepseek.com"
+#     )
+
+#     TARGET = 5
+#     MAX_ATTEMPTS = 10
+
+#     saved = 0
+#     attempts = 0
+
+#     base_questions = generate_questions_from_text(clean_text, limit=5)
+
+#     if not base_questions:
+#         messages.error(
+#             request,
+#             "Not enough content to generate exam questions."
+#         )
+#         return redirect("subjects:chapter-summery", chapter_id=chapter.id)
+
+#     while saved < TARGET and attempts < MAX_ATTEMPTS:
+#         attempts += 1
+
+#         q_text = base_questions[(attempts - 1) % len(base_questions)]
+
+#         prompt = f"""
+# You are an academic exam question setter.
+
+# Generate ONE high-quality MCQ.
+
+# RULES:
+# - Meaningful academic question
+# - No symbols like ", {{ }}, [ ]
+# - Exactly 4 options (A–D)
+# - One correct answer
+
+# Return JSON ONLY:
+
+# {{
+#   "question": "...",
+#   "options": ["A) ...", "B) ...", "C) ...", "D) ..."],
+#   "correct_answer": "A) ..."
+# }}
+
+# CONTENT:
+# {q_text}
+# """
+
+#         try:
+#             response = client.chat.completions.create(
+#                 model="deepseek-chat",
+#                 messages=[{"role": "user", "content": prompt}],
+#                 response_format={"type": "json_object"},
+#                 temperature=0.3,
+#                 max_tokens=250,
+#             )
+
+#             data = json.loads(response.choices[0].message.content)
+
+#             question = data.get("question")
+#             options = data.get("options", [])
+#             correct = data.get("correct_answer", "")
+#             correct = correct[0] 
+
+#             if (
+#                 question
+#                 and len(options) == 4
+#                 and correct in options
+#                 and not Question.objects.filter(
+#                     chapter=chapter, text=question
+#                 ).exists()
+#             ):
+#                 Question.objects.create(
+#                     chapter=chapter,
+#                     text=question,
+#                     options_text="\n".join(options),
+#                     correct_answer=correct
+#                 )
+#                 saved += 1
+
+#         except Exception as e:
+#             print("DeepSeek error:", e)
+            
+#     from exams.models import ChapterProgress
+    
+#     progress, created = ChapterProgress.objects.get_or_create(
+#         user=request.user,
+#         chapter=chapter
+#     )
+    
+#     progress.questions_generated = True
+#     progress.save()
+    
+#     messages.success(
+#         request,
+#         f"{saved} exam questions generated successfully!"
+#     )
+#     return redirect("subjects:chapter-questions", chapter_id=chapter.id)
+
+
+import json
+import os
+import random
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+from openai import OpenAI
+
 def generate_exam_questions_view(request, chapter_id):
     chapter = get_object_or_404(
         Chapter, id=chapter_id, subject__user=request.user
@@ -965,108 +1100,101 @@ def generate_exam_questions_view(request, chapter_id):
         clean_text = chapter.summary
 
     # Generate base question ideas (SEEDS)
-    base_questions = generate_questions_from_text(clean_text, limit=10)
+    TARGET = 5
+    base_questions = generate_questions_from_text(clean_text, limit=TARGET)
+
+    if not base_questions:
+        messages.error(request, "Not enough content to generate exam questions.")
+        return redirect("subjects:chapter-summery", chapter_id=chapter.id)
 
     client = OpenAI(
         api_key=os.getenv("DEEPSEEK_API_KEY"),
         base_url="https://api.deepseek.com"
     )
 
-    TARGET = 5
-    MAX_ATTEMPTS = 10
+    seeds_text = "\n".join([f"- {q}" for q in base_questions])
 
-    saved = 0
-    attempts = 0
-
-    base_questions = generate_questions_from_text(clean_text, limit=5)
-
-    if not base_questions:
-        messages.error(
-            request,
-            "Not enough content to generate exam questions."
-        )
-        return redirect("subjects:chapter-summery", chapter_id=chapter.id)
-
-    while saved < TARGET and attempts < MAX_ATTEMPTS:
-        attempts += 1
-
-        q_text = base_questions[(attempts - 1) % len(base_questions)]
-
-        prompt = f"""
-You are an academic exam question setter.
-
-Generate ONE high-quality MCQ.
-
+    # ULTRA-SHORT PROMPT TO SAVE TOKENS
+    prompt = f"""
+Generate EXACTLY {TARGET} MCQs based on the content.
 RULES:
-- Meaningful academic question
-- No symbols like ", {{ }}, [ ]
-- Exactly 4 options (A–D)
-- One correct answer
-
-Return JSON ONLY:
-
+- 4 options per question. NO prefixes like A), 1., etc.
+- CRITICAL: The FIRST option in the array MUST ALWAYS be the correct answer.
+Return JSON ONLY in this exact format:
 {{
-  "question": "...",
-  "options": ["A) ...", "B) ...", "C) ...", "D) ..."],
-  "correct_answer": "A) ..."
+  "data": [
+    {{
+      "q": "What is the capital of France?",
+      "o": ["Paris", "London", "Berlin", "Madrid"]
+    }}
+  ]
 }}
-
 CONTENT:
-{q_text}
+{seeds_text}
 """
 
-        try:
-            response = client.chat.completions.create(
-                model="deepseek-chat",
-                messages=[{"role": "user", "content": prompt}],
-                response_format={"type": "json_object"},
-                temperature=0.3,
-                max_tokens=250,
-            )
+    saved = 0
 
-            data = json.loads(response.choices[0].message.content)
+    try:
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[{"role": "user", "content": prompt}],
+            response_format={"type": "json_object"},
+            temperature=0.3,
+            max_tokens=1000, 
+        )
 
-            question = data.get("question")
-            options = data.get("options", [])
-            correct = data.get("correct_answer")
+        result = json.loads(response.choices[0].message.content)
+        questions_list = result.get("data", [])
 
-            if (
-                question
-                and len(options) == 4
-                and correct in options
-                and not Question.objects.filter(
-                    chapter=chapter, text=question
-                ).exists()
-            ):
+        letters = ["A", "B", "C", "D"]
+
+        for item in questions_list:
+            question = item.get("q", "").strip()
+            options = item.get("o", [])
+
+            if not question or len(options) != 4:
+                continue
+
+            # We know the first option (index 0) is the correct one based on our prompt
+            correct_text = options[0]
+
+            # Shuffle the options in Python so it's random in the database
+            random.shuffle(options)
+
+            # Find where the correct answer ended up after the shuffle
+            correct_index = options.index(correct_text)
+            correct_letter = letters[correct_index]
+
+            # Save to database
+            if not Question.objects.filter(chapter=chapter, text=question).exists():
                 Question.objects.create(
                     chapter=chapter,
                     text=question,
                     options_text="\n".join(options),
-                    correct_answer=correct
+                    correct_answer=correct_letter
                 )
                 saved += 1
 
-        except Exception as e:
-            print("DeepSeek error:", e)
-            
+    except Exception as e:
+        print("DeepSeek error:", e)
+        
     from exams.models import ChapterProgress
     
     progress, created = ChapterProgress.objects.get_or_create(
         user=request.user,
         chapter=chapter
     )
-    
     progress.questions_generated = True
     progress.save()
     
-    messages.success(
-        request,
-        f"{saved} exam questions generated successfully!"
-    )
+    if saved > 0:
+        messages.success(request, f"{saved} exam questions generated successfully!")
+    else:
+        messages.error(request, "Failed to generate valid questions. Please try again.")
+        
     return redirect("subjects:chapter-questions", chapter_id=chapter.id)
-
-
-
+    
 @login_required
 def view_ai_summary(request, chapter_id):
     chapter = get_object_or_404(Chapter, id=chapter_id)

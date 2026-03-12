@@ -1,5 +1,5 @@
 from django.urls import path, include
-
+from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -8,7 +8,7 @@ urlpatterns = [
 
     #login
     path("accounts/", include("accounts.urls")),
-
+    path('admin/', admin.site.urls),      # Admin panel
     # Main features
     path("subjects/", include("subjects.urls")),
     path("exams/", include("exams.urls")),
